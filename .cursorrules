@@ -18,7 +18,9 @@ Keep the one-page Webflow canvas. Face lives under Past Projects, restyled to Pa
 2026-09-19 — iframe min-height:100vh flashes a second page; size from load with white ground.
 2026-09-19 — Webflow “Made in Webflow” badge is injected by webflow.js brand module when html[data-wf-domain] is *.webflow.io and hostname differs. No-op brand.ready and drop that attribute; CSS hide is backup. Do not restyle Face demos in the Bio slice.
 2026-09-19 — GitHub Pages project URL is `/website/`. Root-absolute `/webflow/` and `/portfolio.html` 404 there; use relative `webflow/` and `portfolio.html` (also works at local `/`).
-2026-09-19 — GitHub Free personal accounts cannot publish Pages from a private repo; Pro can (site still public). If Pages is blocked on private `uyxh20/website`, stop and report — do not silently make the repo public.
+2026-09-19 — GitHub Free personal accounts cannot publish Pages from a private repo; Pro can (site still public). U H later asked to make `uyxh20/website` public, then enable Pages.
+2026-09-19 — Actions `GITHUB_TOKEN` cannot create a Pages site (`403 Resource not accessible by integration`) and cannot PATCH visibility. GitHub Copilot MCP has `admin: true` on the repo but no `update_repository` / Pages tool. This VM has no `gh` login. Keep deploy gated until GET /pages is 200.
+2026-09-19 — `gh auth login --web` prints a device code at https://github.com/login/device. The cloud Chrome session is not signed in to GitHub, so visibility/Pages still need U H to authorize `gh` or click Settings.
 
 [Project Styles]
 Do not rewrite Webflow copy. Keep live-site typos and links.
