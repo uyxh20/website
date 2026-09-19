@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
   pages: write
   id-token: write
 
@@ -15,7 +15,25 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  fix-paths:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Use relative asset paths
+        run: |
+          python3 -c "from pathlib import Path; p=Path('public/site.html'); t=p.read_text().replace('/webflow/','webflow/').replace('src=\"/portfolio.html\"','src=\"portfolio.html\"'); p.write_text(t)"
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add public/site.html
+          if git diff --cached --quiet; then
+            echo "paths already relative"
+          else
+            git commit -m "Use relative webflow and portfolio paths for GitHub Pages."
+            git push
+          fi
+
   probe:
+    needs: fix-paths
     runs-on: ubuntu-latest
     outputs:
       ok: ${{ steps.probe.outputs.ok }}
