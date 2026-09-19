@@ -27,31 +27,42 @@ const CHROME =
   "google-chrome";
 
 const PLACES = {
+  paris: {
+    label: "Paris",
+    copy: "Born there; formative years in lycée 2011–2015.",
+  },
   "hong-kong": {
     label: "Hong Kong",
-    strings: ["Hong Kong", "LIFE EMERGED – 2022", "LIFE EMERGED"],
+    copy: "Grew up. Back home for some stints plus placement: 2017–2018; urban planning internship with Cushman, worked around China. 2021: did market research professionally for companies like Google/Tencent, realised that was the quickest way to kill passion. Then ~Sep 2021–mid 2022: Carlsberg digital graduate program, first post-grad job, ~8 months in the HK office (ERP and CRM rollout).",
+  },
+  bath: {
+    label: "Bath",
+    copy: "2015–2019 University of Bath, BSc Sociology. Read a lot of text.",
+  },
+  shanghai: {
+    label: "Shanghai",
+    copy: "2017–2018 placement year with Cushman & Wakefield. Research transit-oriented development.",
+  },
+  chengdu: {
+    label: "Chengdu",
+    copy: "2017–2018 research transit-oriented development.",
+  },
+  shenzhen: {
+    label: "Shenzhen",
+    copy: "2017–2018 research transit-oriented development.",
   },
   london: {
     label: "London",
-    strings: ["London", "ESSAYS.. – ANTHRO!", "ESSAYS..", "ANTHRO!"],
-  },
-  paris: {
-    label: "Paris",
-    strings: ["Paris", "GROWING"],
+    copy: "2019–2020 UCL, MSc Digital Anthropology (distinction / Dean’s list). Talked to a lot of people and wrote about them.",
   },
   copenhagen: {
     label: "Copenhagen",
-    strings: ["Copenhagen", "ENTERPRISE APPLICATION – UX", "ENTERPRISE APPLICATION", "UX", "2022"],
+    copy: "From ~Jun 2022: product management → AI product management.",
   },
 };
-const PLACE_ORDER = ["hong-kong", "london", "paris", "copenhagen"];
-const BOX_FORBIDDEN = [
-  "Carlsberg",
-  "ethnographic",
-  "University College",
-  "SKU Profitability",
-  "Past Projects",
-];
+const PLACE_ORDER = ["paris", "hong-kong", "bath", "shanghai", "chengdu", "shenzhen", "london", "copenhagen"];
+const CARD_FORBIDDEN = ["LIFE EMERGED", "View full timeline", "SKU Profitability", "GROWING", "ANTHRO!"];
+const EXPECTED_LABELS = PLACE_ORDER.map((id) => PLACES[id].label);
 
 const argv = process.argv.slice(2);
 const cmd = argv[0];
@@ -92,7 +103,7 @@ Usage:
   control-ulysse browser viewport --width 1440 --height 900
   control-ulysse browser screenshot --path FILE [--selector SELECTOR] [--full-page]
   control-ulysse browser dump --path FILE
-  control-ulysse drive --feature bio-map-chips|home-carbon-copy|face-iframe|user-research-tabs [--evidence DIR] [--places hong-kong,london,paris,copenhagen]
+  control-ulysse drive --feature bio-map-chips|home-carbon-copy|face-iframe|user-research-tabs [--evidence DIR] [--places paris,hong-kong,bath,shanghai,chengdu,shenzhen,london,copenhagen]
   control-ulysse cleanup
 
 State: $ULYSSE_VERIFY_STATE or /tmp/ulysse-verify-<run>/state.json
@@ -463,7 +474,6 @@ async function driveBio(state, evidenceDir, result, note) {
   for (const p of places) {
     if (!PLACES[p]) throw new Error(`unknown place ${p}`);
   }
-  const doLightbox = flags.lightbox !== false && flags["no-lightbox"] !== true;
   const doMobile = flags.mobile !== false && flags["no-mobile"] !== true;
 
   await withPage(state, {}, async (page) => {
@@ -479,35 +489,46 @@ async function driveBio(state, evidenceDir, result, note) {
     await shot(page, path.join(evidenceDir, "bio-chips-closed.png"), page.locator("#uh-bio"));
     result.artifacts.push(path.join(evidenceDir, "bio-chips-closed.png"));
 
-    note("no-gantt", facts.ganttCount === 0 && facts.laneCount === 0, `gantt=${facts.ganttCount} lanes=${facts.laneCount}`);
+    note("no-gantt", facts.ganttCount === 0 && facts.laneCount === 0 && facts.boxCount === 0, `gantt=${facts.ganttCount} lanes=${facts.laneCount} boxes=${facts.boxCount}`);
     note("no-made-in-webflow", !facts.webflowBadgeVisible && !facts.madeInWebflowVisible, JSON.stringify({
       badgeVisible: facts.webflowBadgeVisible,
       madeInWebflow: facts.madeInWebflowVisible,
       badgeInDom: facts.webflowBadgeInDom,
     }));
-    note("view-full-timeline", facts.lightboxText.includes("View full timeline"), facts.lightboxText);
-    note("four-chips", facts.chipLabels.join("|") === "Copenhagen|London|Paris|Hong Kong", facts.chipLabels.join(", "));
+    note("no-lightbox", facts.lightboxCount === 0 && !facts.lightboxText && !facts.timelineJpgInBio, JSON.stringify({
+      lightboxCount: facts.lightboxCount,
+      lightboxText: facts.lightboxText,
+      timelineJpgInBio: facts.timelineJpgInBio,
+    }));
+    const missing = EXPECTED_LABELS.filter((l) => !facts.chipLabels.includes(l));
+    note("eight-chips", facts.chipLabels.length === 8 && missing.length === 0, facts.chipLabels.join(", "));
+    note("card-closed", facts.cardHidden === true && !facts.cardVisible, JSON.stringify({ hidden: facts.cardHidden, visible: facts.cardVisible }));
+    note("not-modal", facts.cardRole !== "dialog", facts.cardRole);
 
     for (const place of places) {
       const spec = PLACES[place];
       await page.locator(`.uh-bio-chip[data-place="${place}"]`).click();
       await page.waitForTimeout(250);
-      const box = page.locator(`.uh-bio-box[data-place="${place}"]`);
-      const opened = await box.evaluate((el) => el.open);
-      note(`${place}-opens`, opened, `details.open=${opened}`);
-      const text = (await box.innerText()).replace(/\s+/g, " ").trim();
-      for (const s of spec.strings) {
-        note(`${place}-has-${s}`, text.includes(s), text);
-      }
-      for (const bad of BOX_FORBIDDEN) {
+      const card = page.locator("#uh-bio-card");
+      const opened = await card.evaluate((el) => !el.hidden && el.getAttribute("data-place") === place);
+      note(`${place}-opens`, opened, await card.getAttribute("data-place"));
+      const text = (await card.innerText()).replace(/\s+/g, " ").trim();
+      note(`${place}-label`, text.startsWith(spec.label), text);
+      note(`${place}-copy`, text.includes(spec.copy), text);
+      for (const bad of CARD_FORBIDDEN) {
         note(`${place}-no-${bad}`, !text.includes(bad), text);
       }
       const exclusive = await page.evaluate((id) => {
-        return [...document.querySelectorAll(".uh-bio-box")].every((d) => d.open === (d.getAttribute("data-place") === id));
+        const cardEl = document.getElementById("uh-bio-card");
+        const expanded = [...document.querySelectorAll(".uh-bio-chip")].filter((c) => c.getAttribute("aria-expanded") === "true");
+        return cardEl && !cardEl.hidden && cardEl.getAttribute("data-place") === id && expanded.length === 1 && expanded[0].getAttribute("data-place") === id;
       }, place);
-      note(`${place}-exclusive`, exclusive, "only this details[open]");
+      note(`${place}-exclusive`, exclusive, "one chip expanded, matching card");
       const expanded = await page.locator(`.uh-bio-chip[data-place="${place}"]`).getAttribute("aria-expanded");
       note(`${place}-aria-expanded`, expanded === "true", expanded);
+      const cardBox = await card.boundingBox();
+      const mapBox = await page.locator(".uh-bio-map").boundingBox();
+      note(`${place}-popover-not-fullwidth`, !!(cardBox && mapBox && cardBox.width < mapBox.width * 0.7), JSON.stringify({ card: cardBox, map: mapBox }));
 
       facts = await pageFacts(page);
       writeJson(path.join(evidenceDir, `bio-${place}-dump.json`), facts);
@@ -516,38 +537,26 @@ async function driveBio(state, evidenceDir, result, note) {
       result.artifacts.push(path.join(evidenceDir, `bio-${place}-open.png`));
     }
 
-    if (doLightbox) {
-      await page.locator("a.uh-bio-lightbox").click();
-      await page.waitForTimeout(600);
-      const lightbox = page.locator(".w-lightbox-backdrop, .w-lightbox-container, .w-lightbox-view");
-      const count = await lightbox.count();
-      const visible = count > 0 && (await lightbox.first().isVisible().catch(() => false));
-      note("lightbox-opens", visible, `nodes=${count} visible=${visible}`);
-      if (visible) {
-        const src = await page.evaluate(() => {
-          const img = document.querySelector(".w-lightbox-image, .w-lightbox-img, .w-lightbox-view img");
-          return img ? img.getAttribute("src") || img.src : "";
-        });
-        note("lightbox-timeline-jpg", /Timeline\.jpg/i.test(src), src);
-        await shot(page, path.join(evidenceDir, "bio-lightbox.png"), null);
-        result.artifacts.push(path.join(evidenceDir, "bio-lightbox.png"));
-        const close = page.locator(".w-lightbox-close, .w-lightbox-backdrop");
-        if (await close.count()) await close.first().click({ force: true }).catch(() => {});
-        await page.keyboard.press("Escape").catch(() => {});
-        await page.waitForTimeout(200);
-      }
-    }
-
     if (doMobile) {
       await page.setViewportSize({ width: 390, height: 844 });
       await page.locator("#uh-bio").scrollIntoViewIfNeeded();
       await page.waitForTimeout(300);
       await page.locator('.uh-bio-chip[data-place="hong-kong"]').click();
       await page.waitForTimeout(250);
-      const mobileOpen = await page.locator('.uh-bio-box[data-place="hong-kong"]').evaluate((el) => el.open);
-      note("mobile-hong-kong-opens", mobileOpen, `open=${mobileOpen}`);
+      const card = page.locator("#uh-bio-card");
+      const mobileOpen = await card.evaluate((el) => !el.hidden && el.getAttribute("data-place") === "hong-kong");
+      note("mobile-hong-kong-opens", mobileOpen, await card.getAttribute("data-place"));
+      const mobileText = (await card.innerText()).replace(/\s+/g, " ").trim();
+      note("mobile-hong-kong-copy", mobileText.includes(PLACES["hong-kong"].copy), mobileText);
       const chipBox = await page.locator('.uh-bio-chip[data-place="hong-kong"]').boundingBox();
       note("mobile-chip-sized", !!(chipBox && chipBox.width > 20 && chipBox.height >= 20), JSON.stringify(chipBox));
+      const cardBox = await card.boundingBox();
+      const mapBox = await page.locator(".uh-bio-map").boundingBox();
+      note(
+        "mobile-card-docked",
+        !!(cardBox && mapBox && cardBox.y + 1 >= mapBox.y + mapBox.height - 8),
+        JSON.stringify({ card: cardBox, map: mapBox })
+      );
       await shot(page, path.join(evidenceDir, "bio-mobile-hong-kong.png"), page.locator("#uh-bio"));
       result.artifacts.push(path.join(evidenceDir, "bio-mobile-hong-kong.png"));
       facts = await pageFacts(page);
@@ -556,6 +565,7 @@ async function driveBio(state, evidenceDir, result, note) {
     }
   });
 }
+
 
 async function driveFace(state, evidenceDir, result, note) {
   await withPage(state, {}, async (page) => {
@@ -669,6 +679,8 @@ async function pageFacts(page) {
       text: text(el),
       visible: visible(el),
     }));
+    const card = document.getElementById("uh-bio-card");
+    const bioHtml = bio ? bio.innerHTML : "";
     const face = document.getElementById("uh-face-portfolio");
     const past = document.querySelector("h1.heading-6");
     const uxr = document.querySelector("h1.heading-5");
@@ -688,7 +700,15 @@ async function pageFacts(page) {
       chipLabels: chips.map((c) => c.label),
       chips,
       boxes,
+      boxCount: boxes.length,
+      cardHidden: card ? card.hidden : true,
+      cardVisible: visible(card),
+      cardPlace: card ? card.getAttribute("data-place") : "",
+      cardText: text(card),
+      cardRole: card ? card.getAttribute("role") : "",
       lightboxText: text(document.querySelector("a.uh-bio-lightbox")),
+      lightboxCount: document.querySelectorAll("a.uh-bio-lightbox, .uh-bio-lightbox").length,
+      timelineJpgInBio: /63776ee88dbc35c281183848_Timeline\.jpg|View full timeline|uh-bio-lightbox/i.test(bioHtml),
       ganttCount: document.querySelectorAll(".uh-bio-gantt").length,
       laneCount: document.querySelectorAll(".uh-bio-lane").length,
       webflowBadgeInDom: !!badge,
@@ -724,8 +744,9 @@ async function pageFacts(page) {
     `PAST ${facts.pastProjects}`,
     `UXR ${facts.userResearch}`,
     `CHIPS ${facts.chipLabels.join(", ")}`,
-    `BOXES ${facts.boxes.map((b) => `${b.place}:${b.open ? "open" : "closed"}`).join(" ")}`,
-    `LIGHTBOX ${facts.lightboxText}`,
+    `CARD hidden=${facts.cardHidden} place=${facts.cardPlace} ${facts.cardText || ""}`,
+    `BOXES ${facts.boxCount}`,
+    `LIGHTBOX count=${facts.lightboxCount} text=${facts.lightboxText} timelineJpg=${facts.timelineJpgInBio}`,
     `GANTT ${facts.ganttCount} LANES ${facts.laneCount}`,
     `BADGE visible=${facts.webflowBadgeVisible} inDom=${facts.webflowBadgeInDom} wfDomain=${facts.wfDomain}`,
     `FACE src=${facts.faceSrc} height=${facts.faceHeight}`,

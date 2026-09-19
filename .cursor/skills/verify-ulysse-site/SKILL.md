@@ -69,10 +69,9 @@ Harness: Playwright-core launches a short-lived headless Chrome for each `browse
 | `h1.heading-8` | Hero “The Go-Between” |
 | `h1.body` | “Bio” |
 | `#uh-bio` | Bio widget root |
-| `.uh-bio-map` | Dotted map (`aria-label` Hong Kong London Paris Copenhagen) |
-| `.uh-bio-chip[data-place="hong-kong"\|london\|paris\|copenhagen]` | Coral circle chips with city labels |
-| `.uh-bio-box[data-place="…"]` | In-flow `<details>` boxes |
-| `a.uh-bio-lightbox` | “View full timeline” |
+| `.uh-bio-map` | Dotted map (`aria-label` names the eight cities) |
+| `.uh-bio-chip[data-place="paris"\|hong-kong\|bath\|shanghai\|chengdu\|shenzhen\|london\|copenhagen]` | Coral circle chips with city labels |
+| `#uh-bio-card` | Popover card (desktop) / docked card (mobile) |
 | `h1.heading-6` | “Past Projects” |
 | `#uh-face-portfolio` | iframe `src="/portfolio.html"` |
 | iframe `#specimen-01` … `#specimen-07` | Face specimens |
@@ -88,7 +87,7 @@ $CONTROL drive --feature face-iframe --evidence "$EVIDENCE_DIR"
 $CONTROL drive --feature user-research-tabs --evidence "$EVIDENCE_DIR"
 ```
 
-`--places hong-kong` limits Bio chips to one city (enough for a first proof). Omit it to drive Hong Kong, London, Paris, and Copenhagen.
+`--places paris` limits Bio chips to one city (enough for a first proof). Omit it to drive all eight.
 
 Manual clicks when a feature file says so:
 
@@ -96,11 +95,9 @@ Manual clicks when a feature file says so:
 $CONTROL browser goto --path /
 $CONTROL browser viewport --width 1440 --height 900
 $CONTROL browser click --selector '.uh-bio-chip[data-place="hong-kong"]'
-$CONTROL browser wait --selector '.uh-bio-box[data-place="hong-kong"][open]'
+$CONTROL browser wait --selector '#uh-bio-card:not([hidden])'
 $CONTROL browser screenshot --path "$EVIDENCE_DIR/bio-hong-kong-open.png" --selector '#uh-bio'
 $CONTROL browser dump --path "$EVIDENCE_DIR/bio-hong-kong-dump.json"
-$CONTROL browser click --selector 'a.uh-bio-lightbox'
-$CONTROL browser wait --selector '.w-lightbox-view'
 $CONTROL browser click --selector 'a.w-tab-link[data-w-tab="Cadi"]'
 $CONTROL browser click --selector '#specimen-02' --frame 'iframe#uh-face-portfolio'
 ```
@@ -118,9 +115,9 @@ Proof lives in a directory **you** name. It is never under the launch scratch di
 
 Each `drive` writes `RESULT.json` plus action/result screenshots and JSON dumps. Standards:
 
-- Exercise the real page (`/` → `site.html`, clicks on chips/tabs/lightbox). Do not stub Bio by setting `details.open` from a test-only endpoint; there isn’t one.
-- Capture the **action and the resulting state** (closed chips, then the opened box), not only the last frame.
-- Side effects to verify: DOM (`details[open]`, `aria-expanded`, exclusive boxes), HTTP 200 on `/` and `/portfolio.html`, **absence** of `.uh-bio-gantt` / visible “Made in Webflow”.
+- Exercise the real page (`/` → `site.html`, clicks on chips/tabs). Do not stub Bio by setting card text from a test-only endpoint; there isn’t one.
+- Capture the **action and the resulting state** (closed chips, then the opened card), not only the last frame.
+- Side effects to verify: DOM (`#uh-bio-card` not hidden, `data-place`, `aria-expanded`, exclusive chips), HTTP 200 on `/` and `/portfolio.html`, **absence** of `.uh-bio-gantt`, `a.uh-bio-lightbox`, `Timeline.jpg` in Bio, and visible “Made in Webflow”.
 - Mocks: none. Web fonts may still load from Google; that is the production boundary. Do not mock `portfolio.html`.
 - Screenshots must show the Ulysse H page identity (hero, Bio heading, or Past Projects) plus the widget under test. Reject files under ~800 bytes.
 - Record the feature id in the evidence folder name (`bio-map-chips/`, `home-carbon-copy/`, …).

@@ -23,7 +23,7 @@ This directory is the maintained source for verifying the user-facing behavior o
 
 - Capture the user action and the resulting state, not only the final screen.
 - UI proof includes a JSON dump (`control-ulysse browser dump`) and a screenshot with page identity visible.
-- Mutation here is in-page only (`details.open`, tab `w--current`, lightbox). Re-read those attributes after the click.
+- Mutation here is in-page only (`#uh-bio-card` `hidden`/`data-place`, tab `w--current`). Re-read those attributes after the click.
 - Record the feature ID in the evidence folder.
 - Report an unreachable path with the attempted selector and the unmet precondition.
 - Do not report a skipped city, tab, or specimen as verified through a different one.
@@ -42,6 +42,6 @@ Keep implementation details out of the map. Name only user paths, stable handles
 ## Features
 
 - [Home carbon copy](./home-carbon-copy.md) covers `/` rewriting to `site.html`, the Go-Between hero, Bio heading, and no visible Made in Webflow badge.
-- [Bio map chips](./bio-map-chips.md) covers Hong Kong / London / Paris / Copenhagen chips, in-flow boxes, no Gantt, and View full timeline.
+- [Bio map chips](./bio-map-chips.md) covers eight city chips, popover/docked cards, no Gantt, and no Timeline lightbox.
 - [Face iframe](./face-iframe.md) covers the portfolio iframe under Past Projects and the seven specimens.
 - [User Research tabs](./user-research-tabs.md) covers the four Webflow tabs under User Research.
