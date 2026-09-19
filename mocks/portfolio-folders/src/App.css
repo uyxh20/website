@@ -262,8 +262,7 @@
   box-shadow: inset 0 0 0 1px rgb(255 255 255 / 65%);
 }
 
-.project-card-head,
-.project-card-foot {
+.project-card-head {
   display: flex;
   justify-content: space-between;
   gap: 16px;
@@ -293,13 +292,6 @@
   overflow-wrap: anywhere;
 }
 
-.project-card-foot {
-  padding-top: 10px;
-  border-top: 1px solid rgb(35 35 31 / 16%);
-  font-size: 9px;
-  letter-spacing: 0.06em;
-  text-transform: none;
-}
 
 .drawer {
   position: relative;
@@ -443,9 +435,6 @@
     font-size: 15px;
   }
 
-  .project-card-foot {
-    flex-wrap: wrap;
-  }
 
   .layout-switch {
     flex-wrap: wrap;

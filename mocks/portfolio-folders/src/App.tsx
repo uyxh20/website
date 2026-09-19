@@ -60,7 +60,7 @@ function Cabinet({
   return (
     <div className={`cabinet cabinet-${tabLayout}`}>
       <header className="cabinet-header">
-        <p className="cabinet-eyebrow">Face project specimens</p>
+        <p className="cabinet-eyebrow">Selected projects</p>
         <p className="cabinet-note">Open a hanging file to inspect its project brief.</p>
       </header>
       <ul className="stack">
@@ -181,10 +181,6 @@ function Folder({
                 <span className="project-card-index">{product.id}</span>
               </div>
               <p>{product.description}</p>
-              <div className="project-card-foot">
-                <span>Face project specimen</span>
-                <span>Portfolio copy</span>
-              </div>
             </div>
           </div>
         </div>
