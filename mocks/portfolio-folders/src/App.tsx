@@ -59,6 +59,10 @@ function Cabinet({
 }) {
   return (
     <div className={`cabinet cabinet-${tabLayout}`}>
+      <header className="cabinet-header">
+        <p className="cabinet-eyebrow">Face project specimens</p>
+        <p className="cabinet-note">Open a hanging file to inspect its project brief.</p>
+      </header>
       <ul className="stack">
         {PRODUCTS.map((product, index) => (
           <Folder
@@ -85,23 +89,25 @@ function LayoutSwitch({
   onChange: (layout: TabLayout) => void
 }) {
   return (
-    <p className="layout-switch">
-      <button
-        type="button"
-        aria-pressed={layout === 'left'}
-        onClick={() => onChange('left')}
-      >
-        Left tabs
-      </button>
-      <span aria-hidden="true">·</span>
-      <button
-        type="button"
-        aria-pressed={layout === 'alt'}
-        onClick={() => onChange('alt')}
-      >
-        Alternating
-      </button>
-    </p>
+    <div className="layout-switch" role="group" aria-label="Folder tab layout">
+      <span className="layout-switch-label">Tabs</span>
+      <div className="layout-switch-options">
+        <button
+          type="button"
+          aria-pressed={layout === 'left'}
+          onClick={() => onChange('left')}
+        >
+          Left
+        </button>
+        <button
+          type="button"
+          aria-pressed={layout === 'alt'}
+          onClick={() => onChange('alt')}
+        >
+          Alternating
+        </button>
+      </div>
+    </div>
   )
 }
 
@@ -119,19 +125,22 @@ function Folder({
   onToggle: () => void
 }) {
   const panelId = useId()
+  const titleId = useId()
   const align = tabLayout === 'alt' && index % 2 === 1 ? 'right' : 'left'
 
   useEffect(() => {
     if (!open) return
     const node = document.getElementById(`folder-${product.id}`)
-    node?.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
+    const behavior = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+      ? 'auto'
+      : 'smooth'
+    node?.scrollIntoView({ block: 'nearest', behavior })
   }, [open, product.id])
 
   return (
     <li
       id={`folder-${product.id}`}
       className={open ? 'folder is-open' : 'folder'}
-      style={{ zIndex: index + 1 }}
     >
       <button
         type="button"
@@ -154,17 +163,28 @@ function Folder({
           className="panel"
           id={panelId}
           role="region"
+          aria-labelledby={titleId}
           aria-hidden={!open}
           inert={!open}
         >
           <div className="panel-inner">
             <header className="folder-meta">
-              <h2>{product.name}</h2>
-              <p>{product.id}</p>
+              <div className="folder-meta-top">
+                <span className="folder-category">{product.category}</span>
+                <span className="folder-status">{product.status}</span>
+              </div>
+              <h2 id={titleId}>{product.name}</h2>
             </header>
-            <div className="gallery-slot" aria-label="Gallery">
-              <span className="gallery-mark" aria-hidden="true" />
-              <span className="gallery-label">Gallery</span>
+            <div className="project-card">
+              <div className="project-card-head">
+                <span>Project brief</span>
+                <span className="project-card-index">{product.id}</span>
+              </div>
+              <p>{product.description}</p>
+              <div className="project-card-foot">
+                <span>Face project specimen</span>
+                <span>Portfolio copy</span>
+              </div>
             </div>
           </div>
         </div>
@@ -176,7 +196,12 @@ function Folder({
 function Drawer() {
   return (
     <div className="drawer">
-      <svg className="drawer-shape" viewBox="0 0 720 88" preserveAspectRatio="none">
+      <svg
+        className="drawer-shape"
+        viewBox="0 0 720 88"
+        preserveAspectRatio="none"
+        aria-hidden="true"
+      >
         <path d="M48 1.2 H672 L718 86.8 H2 Z" />
       </svg>
       <h1 className="drawer-label">Portfolio</h1>

@@ -1,6 +1,14 @@
 :root {
-  color: #111111;
-  background: #e6e6e6;
+  color: #23231f;
+  background: #e6e3da;
+  --canvas: #e6e3da;
+  --paper: #fffdf7;
+  --paper-soft: #f5f1e8;
+  --paper-line: #23231f;
+  --ink: #23231f;
+  --muted: #706e65;
+  --yellow: #f2dc4b;
+  --yellow-deep: #e7cc31;
   font-family: 'IBM Plex Sans', 'Helvetica Neue', Helvetica, Arial, sans-serif;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
@@ -22,5 +30,6 @@ body,
 }
 
 body {
-  background: #e6e6e6;
+  background: var(--canvas);
+  overflow-x: hidden;
 }

@@ -2,7 +2,7 @@
 
 Standalone clickable mock of **Portfolio** as hanging-file folders. Aesthetic follows [Inspora 8-1 / File cabinet slide](https://www.inspora.design/posts/8-1) (trapezoid “eye” tabs, one open folder at a time). This is **not** wired into `public/site.html`.
 
-Seven product titles only — no invented biography or body copy. An open folder shows a gallery slot.
+Seven exact product titles plus the existing portfolio category, status and project-hook copy — no invented biography, metrics or links. An open folder shows a compact project brief.
 
 ## Run
 
