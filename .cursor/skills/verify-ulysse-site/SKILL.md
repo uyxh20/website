@@ -92,7 +92,7 @@ Manual clicks when a feature file says so:
 ```bash
 $CONTROL browser goto --path /
 $CONTROL browser viewport --width 1440 --height 900
-$CONTROL browser click --selector '.uh-bio-chip[data-place="hong-kong"]'
+$CONTROL browser click --selector '.uh-bio-chip[data-place="hong-kong"] .uh-bio-city'
 $CONTROL browser wait --selector '#uh-bio-card:not([hidden])'
 $CONTROL browser screenshot --path "$EVIDENCE_DIR/bio-hong-kong-open.png" --selector '#uh-bio'
 $CONTROL browser dump --path "$EVIDENCE_DIR/bio-hong-kong-dump.json"
