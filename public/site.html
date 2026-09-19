@@ -5,6 +5,7 @@
 .uh-bio-map{position:relative;width:100%;overflow:visible;background:#fff;line-height:0}
 .uh-bio-map img{display:block;width:100%;height:auto;max-width:100%;border:0}
 .uh-bio-chip{position:absolute;display:flex;align-items:center;gap:8px;border:0;margin:0;padding:10px 0 10px 8px;background:transparent;cursor:pointer;font-family:Roboto,sans-serif;transform:translate(-100%,-50%);margin-left:7px;min-height:44px;z-index:4}
+.uh-bio-chip--east{transform:translate(0,-50%);margin-left:-7px;flex-direction:row-reverse;padding:10px 8px 10px 0}
 .uh-bio-chip:focus-visible,.uh-bio-card:focus-visible{outline:2px solid #ff6a63;outline-offset:2px}
 .uh-bio-dot{display:block;width:14px;height:14px;border-radius:50%;background:#ff6a63;flex:0 0 14px;box-shadow:0 0 0 2px #fff}
 .uh-bio-chip.is-active .uh-bio-dot{box-shadow:0 0 0 2px #fff,0 0 0 4px #030303}
@@ -35,10 +36,10 @@
 <button type="button" class="uh-bio-chip" data-place="london" style="left:49.22%;top:25.63%" aria-controls="uh-bio-card" aria-expanded="false"><span class="uh-bio-city">London</span><span class="uh-bio-dot"></span></button>
 <button type="button" class="uh-bio-chip" data-place="bath" style="left:46.70%;top:28.40%" aria-controls="uh-bio-card" aria-expanded="false"><span class="uh-bio-city">Bath</span><span class="uh-bio-dot"></span></button>
 <button type="button" class="uh-bio-chip" data-place="paris" style="left:50.96%;top:32.50%" aria-controls="uh-bio-card" aria-expanded="false"><span class="uh-bio-city">Paris</span><span class="uh-bio-dot"></span></button>
-<button type="button" class="uh-bio-chip" data-place="chengdu" style="left:77.40%;top:39.20%" aria-controls="uh-bio-card" aria-expanded="false"><span class="uh-bio-city">Chengdu</span><span class="uh-bio-dot"></span></button>
-<button type="button" class="uh-bio-chip" data-place="shanghai" style="left:82.60%;top:35.80%" aria-controls="uh-bio-card" aria-expanded="false"><span class="uh-bio-city">Shanghai</span><span class="uh-bio-dot"></span></button>
-<button type="button" class="uh-bio-chip" data-place="shenzhen" style="left:84.10%;top:41.20%" aria-controls="uh-bio-card" aria-expanded="false"><span class="uh-bio-city">Shenzhen</span><span class="uh-bio-dot"></span></button>
-<button type="button" class="uh-bio-chip" data-place="hong-kong" style="left:85.48%;top:43.54%" aria-controls="uh-bio-card" aria-expanded="false"><span class="uh-bio-city">Hong Kong</span><span class="uh-bio-dot"></span></button>
+<button type="button" class="uh-bio-chip" data-place="chengdu" style="left:73.20%;top:36.80%" aria-controls="uh-bio-card" aria-expanded="false"><span class="uh-bio-city">Chengdu</span><span class="uh-bio-dot"></span></button>
+<button type="button" class="uh-bio-chip uh-bio-chip--east" data-place="shanghai" style="left:83.40%;top:33.60%" aria-controls="uh-bio-card" aria-expanded="false"><span class="uh-bio-city">Shanghai</span><span class="uh-bio-dot"></span></button>
+<button type="button" class="uh-bio-chip" data-place="shenzhen" style="left:80.80%;top:41.80%" aria-controls="uh-bio-card" aria-expanded="false"><span class="uh-bio-city">Shenzhen</span><span class="uh-bio-dot"></span></button>
+<button type="button" class="uh-bio-chip uh-bio-chip--east" data-place="hong-kong" style="left:85.48%;top:43.54%" aria-controls="uh-bio-card" aria-expanded="false"><span class="uh-bio-city">Hong Kong</span><span class="uh-bio-dot"></span></button>
 </div>
 <div class="uh-bio-card" id="uh-bio-card" hidden role="region" aria-live="polite" data-place="">
 <p class="uh-bio-card-city"></p>
