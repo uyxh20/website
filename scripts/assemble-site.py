@@ -34,7 +34,7 @@ FACE_BLOCK_RE = re.compile(
 )
 
 APPEND = """
-<iframe id="uh-face-portfolio" src="/portfolio.html" title="Ulysse AI Product and Transformation Portfolio" style="display:block;width:100%;border:0;margin:0;padding:0;background:#ffffff;height:0;min-height:0;overflow:hidden"></iframe>
+<iframe id="uh-face-portfolio" src="portfolio.html" title="Ulysse AI Product and Transformation Portfolio" style="display:block;width:100%;border:0;margin:0;padding:0;background:#ffffff;height:0;min-height:0;overflow:hidden"></iframe>
 <script>
 (function () {
   var frame = document.getElementById("uh-face-portfolio");
@@ -97,8 +97,8 @@ def local_path_for(url: str) -> Path:
 
 
 def public_url_for(url: str) -> str:
-    path = local_path_for(url)
-    return "/" + path.relative_to(PUBLIC).as_posix()
+    # Relative so the site works at both `/` (local Next) and `/website/` (GitHub Pages).
+    return local_path_for(url).relative_to(PUBLIC).as_posix()
 
 
 def collect_urls(html: str) -> list[str]:
@@ -150,6 +150,13 @@ def fetch_live() -> str:
     return rewrite_html(html, mapping)
 
 
+def make_site_relative(html: str) -> str:
+    html = html.replace("/webflow/", "webflow/")
+    html = html.replace('src="/portfolio.html"', 'src="portfolio.html"')
+    html = html.replace("src='/portfolio.html'", "src='portfolio.html'")
+    return html
+
+
 def strip_webflow_badge(html: str) -> str:
     html = html.replace("<!-- This site was created in Webflow. https://www.webflow.com -->", "")
     html = html.replace(' data-wf-domain="ulysseh.webflow.io"', "")
@@ -195,6 +202,7 @@ def main() -> None:
         html = SITE.read_text()
 
     html = strip_webflow_badge(inject_face(html))
+    html = make_site_relative(html)
     if not face_is_before_user_research(html):
         raise SystemExit("Face iframe is not under Past Projects / before User Research")
 
