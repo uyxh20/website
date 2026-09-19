@@ -1,0 +1,14 @@
+[Cursor Rules]
+Carbon-copy the live Webflow page first. Append Face portfolio.html on the same canvas. Do not add nav, buttons, routes, or rewrite copy until that combined page exists.
+
+[Plan]
+1. Clone ulysseh.webflow.io into public/site.html with original assets.
+2. Append uyxh20/Face public/portfolio.html on the same page.
+3. Serve that page at /.
+
+[Knowledge Learned]
+2026-09-19 — github.com/uyxh20/FaceSo 404s. Dashboard is private uyxh20/Face, file public/portfolio.html.
+2026-09-19 — U H: first slice is carbon copy + append, not a redesigned Work/Background/Writings app.
+
+[Project Styles]
+Do not rewrite Webflow copy. Keep live-site typos and links.
