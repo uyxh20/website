@@ -510,7 +510,7 @@ async function driveBio(state, evidenceDir, result, note) {
       await page.locator(`.uh-bio-chip[data-place="${place}"]`).click();
       await page.waitForTimeout(250);
       const card = page.locator("#uh-bio-card");
-      const opened = await card.evaluate((el) => !el.hidden && el.getAttribute("data-place") === place);
+      const opened = await card.evaluate((el, id) => !el.hidden && el.getAttribute("data-place") === id, place);
       note(`${place}-opens`, opened, await card.getAttribute("data-place"));
       const text = (await card.innerText()).replace(/\s+/g, " ").trim();
       note(`${place}-label`, text.startsWith(spec.label), text);
@@ -544,7 +544,7 @@ async function driveBio(state, evidenceDir, result, note) {
       await page.locator('.uh-bio-chip[data-place="hong-kong"]').click();
       await page.waitForTimeout(250);
       const card = page.locator("#uh-bio-card");
-      const mobileOpen = await card.evaluate((el) => !el.hidden && el.getAttribute("data-place") === "hong-kong");
+      const mobileOpen = await card.evaluate((el, id) => !el.hidden && el.getAttribute("data-place") === id, "hong-kong");
       note("mobile-hong-kong-opens", mobileOpen, await card.getAttribute("data-place"));
       const mobileText = (await card.innerText()).replace(/\s+/g, " ").trim();
       note("mobile-hong-kong-copy", mobileText.includes(PLACES["hong-kong"].copy), mobileText);
