@@ -1,6 +1,6 @@
 ---
 name: verify-ulysse-site
-description: Drive the Ulysse H personal site (Webflow carbon copy at public/site.html, Next rewrite of / to that page, Bio map chips, Face iframe at /portfolio.html) in a real Chrome session. Use when proving Bio chips, Face specimens, User Research tabs, absence of Gantt or Made in Webflow, or any user-visible change on the served site.
+description: Drive the Ulysse H personal site (Webflow carbon copy at public/site.html, Next rewrite of / to that page, Bio map chips, Face iframe at /portfolio.html) in a real Chrome session. Use when proving Bio chips, Face specimens, absence of old Webflow case studies, Gantt, or Made in Webflow, or any user-visible change on the served site.
 ---
 
 # Verify Ulysse H site
@@ -66,17 +66,15 @@ Harness: Playwright-core launches a short-lived headless Chrome for each `browse
 
 | Handle | What it is |
 | --- | --- |
-| `h1.heading-8` | Hero “The Go-Between” |
+| `h1.heading-8` | Hero “In-Between” |
 | `h1.body` | “Bio” |
 | `#uh-bio` | Bio widget root |
-| `.uh-bio-map` | Dotted map (`aria-label` names the eight cities) |
+| `.uh-bio-map` | Dotted map (`aria-label` names the eight cities), about two-thirds of the column |
 | `.uh-bio-chip[data-place="paris"\|hong-kong\|bath\|shanghai\|chengdu\|shenzhen\|london\|copenhagen]` | Coral circle chips with city labels |
 | `#uh-bio-card` | Popover card (desktop) / docked card (mobile) |
-| `h1.heading-6` | “Past Projects” |
-| `#uh-face-portfolio` | iframe `src="/portfolio.html"` |
-| iframe `#specimen-01` … `#specimen-07` | Face specimens |
-| `h1.heading-5` | “User Research” (trailing space in the heading text) |
-| `a.w-tab-link[data-w-tab="Cadi"\|CS Marketplace\|Journey Mapping\|UCL]` | User Research tabs |
+| `h1.heading-6` | “Portfolio” |
+| `#uh-face-portfolio` | iframe `src="portfolio.html"` |
+| iframe `#specimen-01` … `#specimen-07` | Face specimens (only the selected row’s product is visible) |
 
 Recipe for one mapped feature (preferred):
 
@@ -84,7 +82,7 @@ Recipe for one mapped feature (preferred):
 $CONTROL drive --feature bio-map-chips --evidence "$EVIDENCE_DIR"
 $CONTROL drive --feature home-carbon-copy --evidence "$EVIDENCE_DIR"
 $CONTROL drive --feature face-iframe --evidence "$EVIDENCE_DIR"
-$CONTROL drive --feature user-research-tabs --evidence "$EVIDENCE_DIR"
+$CONTROL drive --feature no-webflow-case-studies --evidence "$EVIDENCE_DIR"
 ```
 
 `--places paris` limits Bio chips to one city (enough for a first proof). Omit it to drive all eight.
@@ -98,7 +96,6 @@ $CONTROL browser click --selector '.uh-bio-chip[data-place="hong-kong"]'
 $CONTROL browser wait --selector '#uh-bio-card:not([hidden])'
 $CONTROL browser screenshot --path "$EVIDENCE_DIR/bio-hong-kong-open.png" --selector '#uh-bio'
 $CONTROL browser dump --path "$EVIDENCE_DIR/bio-hong-kong-dump.json"
-$CONTROL browser click --selector 'a.w-tab-link[data-w-tab="Cadi"]'
 $CONTROL browser click --selector '#specimen-02' --frame 'iframe#uh-face-portfolio'
 ```
 
@@ -119,7 +116,7 @@ Each `drive` writes `RESULT.json` plus action/result screenshots and JSON dumps.
 - Capture the **action and the resulting state** (closed chips, then the opened card), not only the last frame.
 - Side effects to verify: DOM (`#uh-bio-card` not hidden, `data-place`, `aria-expanded`, exclusive chips), HTTP 200 on `/` and `/portfolio.html`, **absence** of `.uh-bio-gantt`, `a.uh-bio-lightbox`, `Timeline.jpg` in Bio, and visible “Made in Webflow”.
 - Mocks: none. Web fonts may still load from Google; that is the production boundary. Do not mock `portfolio.html`.
-- Screenshots must show the Ulysse H page identity (hero, Bio heading, or Past Projects) plus the widget under test. Reject files under ~800 bytes.
+- Screenshots must show the Ulysse H page identity (hero, Bio heading, or Portfolio) plus the widget under test. Reject files under ~800 bytes.
 - Record the feature id in the evidence folder name (`bio-map-chips/`, `home-carbon-copy/`, …).
 
 ## Cleanup

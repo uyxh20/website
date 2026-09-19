@@ -19,6 +19,7 @@ Bio lets a user pick Paris, Hong Kong, Bath, Shanghai, Chengdu, Shenzhen, London
 - `card-dock-mobile` docks the same card under the map at 390×844.
 - `no-gantt` keeps `.uh-bio-gantt`, `.uh-bio-lane`, and `.uh-bio-box` out of the document.
 - `no-lightbox` keeps View full timeline and Timeline.jpg out of Bio.
+- `map-two-thirds` keeps `.uh-bio-map` at about two-thirds of the Bio column, centered.
 
 ## How to get to it (user POV)
 

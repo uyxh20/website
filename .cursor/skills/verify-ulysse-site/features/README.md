@@ -23,25 +23,14 @@ This directory is the maintained source for verifying the user-facing behavior o
 
 - Capture the user action and the resulting state, not only the final screen.
 - UI proof includes a JSON dump (`control-ulysse browser dump`) and a screenshot with page identity visible.
-- Mutation here is in-page only (`#uh-bio-card` `hidden`/`data-place`, tab `w--current`). Re-read those attributes after the click.
+- Mutation here is in-page only (`#uh-bio-card` `hidden`/`data-place`, specimen `hidden`). Re-read those attributes after the click.
 - Record the feature ID in the evidence folder.
 - Report an unreachable path with the attempted selector and the unmet precondition.
-- Do not report a skipped city, tab, or specimen as verified through a different one.
-
-## Feature entry contract
-
-Each feature file starts with an H1 title and one paragraph describing the user-visible behavior. It then uses exactly four H2 sections in this order.
-
-1. `Sub-features` lists short IDs with one line for each behavior.
-2. `How to get to it (user POV)` lists every user entry point.
-3. `Driving it with control-ulysse` starts with `Preconditions:` and uses labeled bullets that pair each user action with an exact command and observable result.
-4. `Gotchas` lists traps that can waste or invalidate a verification run.
-
-Keep implementation details out of the map. Name only user paths, stable handles, required state, commands, and observable proof.
+- Do not report a skipped city or specimen as verified through a different one.
 
 ## Features
 
-- [Home carbon copy](./home-carbon-copy.md) covers `/` rewriting to `site.html`, the Go-Between hero, Bio heading, and no visible Made in Webflow badge.
-- [Bio map chips](./bio-map-chips.md) covers eight city chips, popover/docked cards, no Gantt, and no Timeline lightbox.
-- [Face iframe](./face-iframe.md) covers the portfolio iframe under Past Projects and the seven specimens.
-- [User Research tabs](./user-research-tabs.md) covers the four Webflow tabs under User Research.
+- [Home carbon copy](./home-carbon-copy.md) covers `/` rewriting to `site.html`, the In-Between hero, Bio heading, Portfolio, and no visible Made in Webflow badge.
+- [Bio map chips](./bio-map-chips.md) covers eight city chips, popover/docked cards, a two-thirds map, no Gantt, and no Timeline lightbox.
+- [Face iframe](./face-iframe.md) covers the portfolio iframe under Portfolio, the seven specimens, and click-to-filter.
+- [No Webflow case studies](./no-webflow-case-studies.md) covers deletion of User Research through Ops Optimisation.
