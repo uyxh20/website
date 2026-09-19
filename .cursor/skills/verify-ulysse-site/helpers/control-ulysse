@@ -636,8 +636,10 @@ async function withPage(state, bflags, fn) {
     const root = bflags.frame ? page.frameLocator(bflags.frame) : page;
     await fn(page, root);
   } finally {
-    // Disconnect only. browser.close() on a CDP session can kill the Chrome
-    // this run started, which would break later doctor/drive/cleanup steps.
+    // Close the Playwright connection only. Default CDP close() sends
+    // Browser.close and would kill the Chrome this run started.
+    browser._shouldCloseConnectionOnClose = true;
+    await browser.close().catch(() => {});
   }
 }
 

@@ -10,6 +10,7 @@ Keep the one-page Webflow canvas. Face lives under Past Projects, restyled to Pa
 [Knowledge Learned]
 2026-09-19 — Verification of the served site uses `.cursor/skills/verify-ulysse-site/` (`control-ulysse`). Isolate on a port other than 43177/43241; never pkill next/chrome. Evidence directories survive cleanup; scratch is `/tmp/ulysse-verify-<run>/`.
 2026-09-19 — Next 16 refuses a second `next dev` in the same checkout (`.next/dev/lock`). Verify launch sets `ULYSSE_VERIFY_DIST_DIR=.next-verify/<run>` via `next.config.ts`; do not kill the 43241 preview.
+2026-09-19 — `connectOverCDP` without closing the Playwright connection leaves Node running. Set `_shouldCloseConnectionOnClose` then `browser.close()` so Chrome stays and the helper exits.
 2026-09-19 — github.com/uyxh20/FaceSo 404s. Dashboard is private uyxh20/Face, file public/portfolio.html.
 2026-09-19 — U H: first slice is carbon copy + append, not a redesigned Work/Background/Writings app.
 2026-09-19 — assemble-site.py must inject Face after the Past Projects heading, never at </body>. Re-running on local site.html preserves the carbon copy; --from-live re-fetches Webflow.
