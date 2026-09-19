@@ -1,11 +1,12 @@
 [Cursor Rules]
-Keep the one-page Webflow canvas. Face lives under Past Projects, restyled to Palette 1. Do not add site nav, sticky chips, or rewrite Webflow copy/typos/links.
+Keep the one-page Webflow canvas. Face lives under Portfolio, restyled to Palette 1. Do not add site nav, sticky chips, or rewrite Webflow copy/typos/links. Do not invent biography.
 
 [Plan]
 1. Carbon-copy ulysseh.webflow.io into public/site.html.
-2. Relocate Face after h1.heading-6 Past Projects, before User Research tabs.
+2. Relocate Face after h1.heading-6 Portfolio.
 3. Restyle Face page chrome to Webflow tokens; demos may stay dark inside specimens.
-4. Bio: dotted map; eight coral chips (Paris, Hong Kong, Bath, Shanghai, Chengdu, Shenzhen, London, Copenhagen). Click = popover card (docked under the map on mobile). No Gantt JPEG, no View full timeline. Owner copy from bio-map.md only.
+4. Bio: dotted map at about two-thirds of the column, centered; eight coral chips on real geography for this map image (Bath next to London, Copenhagen in Denmark, Shenzhen and Hong Kong almost together). Click = popover card (docked under the map on mobile). No Gantt JPEG, no View full timeline. Owner copy from bio-map.md only.
+5. In-Between pass: hero In-Between / Where Human Digital Intersect; strip Insights/Writings hairlines; Contact and LinkedIn on one line; Portfolio index click shows one product; delete User Research through program management, comms, ops.
 
 [Knowledge Learned]
 2026-09-19 — Verification of the served site uses `.cursor/skills/verify-ulysse-site/` (`control-ulysse`). Isolate on a port other than 43177/43241; never pkill next/chrome. Evidence directories survive cleanup; scratch is `/tmp/ulysse-verify-<run>/`.
@@ -14,15 +15,17 @@ Keep the one-page Webflow canvas. Face lives under Past Projects, restyled to Pa
 2026-09-19 — `.uh-bio-map{overflow:hidden}` makes a stacking context, so a sibling `#uh-bio-card` paints over chips even if chips have a higher z-index. Keep map overflow visible; chips z-index above the card. Park Europe cards west of the pin (Atlantic); Asia cards below the pin. Shanghai and Hong Kong labels sit east of the pin so they do not cover Shenzhen. Chip hit target is the 44px pin; city labels use `pointer-events:none`.
 2026-09-19 — github.com/uyxh20/FaceSo 404s. Dashboard is private uyxh20/Face, file public/portfolio.html.
 2026-09-19 — U H: first slice is carbon copy + append, not a redesigned Work/Background/Writings app.
-2026-09-19 — assemble-site.py must inject Face after the Past Projects heading, never at </body>. Re-running on local site.html preserves the carbon copy; --from-live re-fetches Webflow.
+2026-09-19 — assemble-site.py must inject Face after the Portfolio heading (legacy marker was Past Projects), never at </body>. Re-running on local site.html preserves the carbon copy; --from-live re-fetches Webflow then renames the heading and strips case studies.
 2026-09-19 — iframe min-height:100vh flashes a second page; size from load with white ground.
 2026-09-19 — Webflow “Made in Webflow” badge is injected by webflow.js brand module when html[data-wf-domain] is *.webflow.io and hostname differs. No-op brand.ready and drop that attribute; CSS hide is backup. Do not restyle Face demos in the Bio slice.
 2026-09-19 — GitHub Pages project URL is `/website/`. Root-absolute `/webflow/` and `/portfolio.html` 404 there; use relative `webflow/` and `portfolio.html` (also works at local `/`).
 2026-09-19 — GitHub Free personal accounts cannot publish Pages from a private repo; Pro can (site still public). U H later asked to make `uyxh20/website` public, then enable Pages.
 2026-09-19 — Actions `GITHUB_TOKEN` cannot create a Pages site (`403 Resource not accessible by integration`) and cannot PATCH visibility. GitHub Copilot MCP has `admin: true` on the repo but no `update_repository` / Pages tool. This VM has no `gh` login. Keep deploy gated until GET /pages is 200.
 2026-09-19 — `gh auth login --web` prints a device code at https://github.com/login/device. The cloud Chrome session is not signed in to GitHub, so visibility/Pages still need U H to authorize `gh` or click Settings.
+2026-09-19 — In-Between pass: GitHub uyxh20/website is source of truth, not Origin u-h/genesis. Hero is In-Between / Where Human Digital Intersect. Map width ~66.7% centered; snap chips to land dots on bio-map-from-timeline.jpg (Bath on Britain next to London, Copenhagen on the Denmark band not Scandinavia, Shenzhen one row north of Hong Kong). Human Insights Contact+LinkedIn share `.uh-plain-links` (no `.text-block-2` hairlines). Portfolio row click hides other `.project` nodes; 01 selected by default. Deleted Webflow case studies from User Research through Ops Optimisation.
 
 [Project Styles]
 Do not rewrite Webflow copy. Keep live-site typos and links.
 Face demo interiors: Palette 1 `#222` canvas + `#1a1b1f` primary; Palette 2 `#ff6b6b` only for selection/highlights. No Made in Webflow badge.
 GitHub Pages static root is `public/` with relative asset paths; `site.html` is copied to `index.html` in the Pages artifact.
+Hero title `In-Between`; subtitle `Where Human Digital Intersect`. Section heading after Bio breakers is `Portfolio`.

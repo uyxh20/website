@@ -103,7 +103,7 @@ Usage:
   control-ulysse browser viewport --width 1440 --height 900
   control-ulysse browser screenshot --path FILE [--selector SELECTOR] [--full-page]
   control-ulysse browser dump --path FILE
-  control-ulysse drive --feature bio-map-chips|home-carbon-copy|face-iframe|user-research-tabs [--evidence DIR] [--places paris,hong-kong,bath,shanghai,chengdu,shenzhen,london,copenhagen]
+  control-ulysse drive --feature bio-map-chips|home-carbon-copy|face-iframe|no-webflow-case-studies [--evidence DIR] [--places paris,hong-kong,bath,shanghai,chengdu,shenzhen,london,copenhagen]
   control-ulysse cleanup
 
 State: $ULYSSE_VERIFY_STATE or /tmp/ulysse-verify-<run>/state.json
@@ -425,7 +425,8 @@ async function drive() {
     if (feature === "bio-map-chips") await driveBio(state, evidenceDir, result, note);
     else if (feature === "home-carbon-copy") await driveHome(state, evidenceDir, result, note);
     else if (feature === "face-iframe") await driveFace(state, evidenceDir, result, note);
-    else if (feature === "user-research-tabs") await driveTabs(state, evidenceDir, result, note);
+    else if (feature === "no-webflow-case-studies") await driveCaseStudiesGone(state, evidenceDir, result, note);
+    else if (feature === "user-research-tabs") await driveCaseStudiesGone(state, evidenceDir, result, note);
     else throw new Error(`unknown feature ${feature}`);
   } catch (err) {
     result.ok = false;
@@ -456,16 +457,19 @@ async function driveHome(state, evidenceDir, result, note) {
     result.artifacts.push(path.join(evidenceDir, "home-bio.png"));
 
     note("title", facts.title === "Ulysse H", facts.title);
-    note("hero", /The Go-Between/.test(facts.hero), facts.hero);
+    note("hero", facts.hero.replace(/\s+/g, " ").includes("In-Between") && !/The Go-Between/.test(facts.hero), facts.hero);
+    note("subtitle", facts.subtitle === "Where Human Digital Intersect", facts.subtitle);
     note("bio-heading", facts.bioHeading === "Bio", facts.bioHeading);
-    note("past-projects", facts.pastProjects === "Past Projects", facts.pastProjects);
+    note("portfolio", facts.portfolio === "Portfolio", facts.portfolio);
+    note("no-user-research", !facts.headings.some((h) => /User Research/i.test(h)), facts.headings.join(" | "));
     note("rewrite-serves-site", facts.hasUhBio, "GET / contains #uh-bio from site.html");
     note("webflow-badge-hidden", !facts.webflowBadgeVisible && !facts.madeInWebflowVisible, JSON.stringify({
       badgeVisible: facts.webflowBadgeVisible,
       madeInWebflow: facts.madeInWebflowVisible,
       wfDomain: facts.wfDomain,
     }));
-    note("face-iframe", facts.faceSrc.endsWith("/portfolio.html") && facts.faceAfterPastProjects, facts.faceSrc);
+    note("face-iframe", /(?:^|\/)portfolio\.html$/.test(facts.faceSrc) && facts.faceAfterPortfolio, facts.faceSrc);
+    note("insight-links-one-line", facts.insightLinksOneLine === true, JSON.stringify(facts.insightLinks));
   });
 }
 
@@ -502,6 +506,13 @@ async function driveBio(state, evidenceDir, result, note) {
     }));
     const missing = EXPECTED_LABELS.filter((l) => !facts.chipLabels.includes(l));
     note("eight-chips", facts.chipLabels.length === 8 && missing.length === 0, facts.chipLabels.join(", "));
+    const bioBox = await page.locator("#uh-bio").boundingBox();
+    const mapBoxClosed = await page.locator(".uh-bio-map").boundingBox();
+    note(
+      "map-two-thirds",
+      !!(mapBoxClosed && bioBox && mapBoxClosed.width < bioBox.width * 0.75 && mapBoxClosed.width > bioBox.width * 0.55),
+      JSON.stringify({ map: mapBoxClosed && mapBoxClosed.width, bio: bioBox && bioBox.width })
+    );
     note("card-closed", facts.cardHidden === true && !facts.cardVisible, JSON.stringify({ hidden: facts.cardHidden, visible: facts.cardVisible }));
     note("not-modal", facts.cardRole !== "dialog", facts.cardRole);
 
@@ -580,17 +591,29 @@ async function driveFace(state, evidenceDir, result, note) {
     const facts = await pageFacts(page);
     writeJson(path.join(evidenceDir, "face-dump.json"), facts);
     result.artifacts.push(path.join(evidenceDir, "face-dump.json"));
-    note("iframe-src", facts.faceSrc.endsWith("/portfolio.html"), facts.faceSrc);
-    note("iframe-after-past-projects", facts.faceAfterPastProjects, JSON.stringify(facts.orderAroundFace));
-    note("iframe-before-user-research", facts.faceBeforeUserResearch, JSON.stringify(facts.orderAroundFace));
+    note("iframe-src", /(?:^|\/)portfolio\.html$/.test(facts.faceSrc), facts.faceSrc);
+    note("iframe-after-portfolio", facts.faceAfterPortfolio, JSON.stringify(facts.orderAroundFace));
+    note("iframe-no-user-research", facts.userResearch === "" && !facts.faceBeforeUserResearch, JSON.stringify({
+      userResearch: facts.userResearch,
+      faceBeforeUserResearch: facts.faceBeforeUserResearch,
+    }));
     note("specimens-7", facts.specimenIds.length === 7, facts.specimenIds.join(", "));
     note("specimen-01-open", facts.firstDemoOpen === true, String(facts.firstDemoOpen));
+    note("specimen-01-only-visible", facts.visibleSpecimenIds.join(",") === "specimen-01", facts.visibleSpecimenIds.join(", "));
+    note("index-01-selected", facts.selectedSpecimenHref === "#specimen-01", facts.selectedSpecimenHref);
     note("iframe-height", facts.faceHeight > 200, `height=${facts.faceHeight}`);
 
-    await shot(page, path.join(evidenceDir, "face-under-past-projects.png"), null);
-    result.artifacts.push(path.join(evidenceDir, "face-under-past-projects.png"));
+    await shot(page, path.join(evidenceDir, "face-under-portfolio.png"), null);
+    result.artifacts.push(path.join(evidenceDir, "face-under-portfolio.png"));
     await shot(page, path.join(evidenceDir, "face-specimen-01.png"), page.locator("#uh-face-portfolio"));
     result.artifacts.push(path.join(evidenceDir, "face-specimen-01.png"));
+
+    await frame.locator('a[href="#specimen-02"]').click();
+    await page.waitForTimeout(400);
+    const afterClick = await pageFacts(page);
+    note("click-02-only-visible", afterClick.visibleSpecimenIds.join(",") === "specimen-02", afterClick.visibleSpecimenIds.join(", "));
+    await shot(page, path.join(evidenceDir, "face-specimen-02.png"), page.locator("#uh-face-portfolio"));
+    result.artifacts.push(path.join(evidenceDir, "face-specimen-02.png"));
 
     await page.goto(state.url + "/portfolio.html", { waitUntil: "domcontentloaded", timeout: 30000 });
     await page.waitForSelector("#specimen-01", { timeout: 10000 });
@@ -601,39 +624,25 @@ async function driveFace(state, evidenceDir, result, note) {
   });
 }
 
-async function driveTabs(state, evidenceDir, result, note) {
-  const tabs = [
-    { id: "CS Marketplace", label: "Sales Tool (SFA)", expect: "UX Researcher @ Carlsberg Group Digital Studio" },
-    { id: "Cadi", label: "B2B Marketplace", expect: "B2B e-com" },
-    { id: "Journey Mapping", label: "Global Customer Journey", expect: "Data integration project manager" },
-    { id: "UCL", label: "Graduate Research", expect: "User Researcher @ Carlsberg Group" },
-  ];
+async function driveCaseStudiesGone(state, evidenceDir, result, note) {
   await withPage(state, {}, async (page) => {
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto(state.url + "/", { waitUntil: "domcontentloaded", timeout: 30000 });
-    await page.locator("h1.heading-5").scrollIntoViewIfNeeded();
+    await page.waitForSelector("#uh-bio", { timeout: 15000 });
     await page.waitForTimeout(400);
-    const current = await page.locator("a.w-tab-link.w--current").getAttribute("data-w-tab");
-    note("default-tab", current === "CS Marketplace", current);
-    await shot(page, path.join(evidenceDir, "uxr-default.png"), page.locator(".uxr-tabs"));
-    result.artifacts.push(path.join(evidenceDir, "uxr-default.png"));
-
-    for (const tab of tabs) {
-      await page.locator(`a.w-tab-link[data-w-tab="${tab.id}"]`).click();
-      await page.waitForTimeout(400);
-      const active = await page.locator(`a.w-tab-link[data-w-tab="${tab.id}"]`).evaluate((el) => el.classList.contains("w--current"));
-      const pane = page.locator(`.w-tab-pane[data-w-tab="${tab.id}"]`);
-      const paneActive = await pane.evaluate((el) => el.classList.contains("w--tab-active"));
-      const text = (await pane.innerText()).replace(/\s+/g, " ");
-      note(`tab-${tab.id}-current`, active && paneActive, `current=${active} pane=${paneActive}`);
-      note(`tab-${tab.id}-copy`, text.includes(tab.expect), text.slice(0, 180));
-      const slug = tab.id.toLowerCase().replace(/\s+/g, "-");
-      await shot(page, path.join(evidenceDir, `uxr-${slug}.png`), page.locator(".uxr-tabs"));
-      result.artifacts.push(path.join(evidenceDir, `uxr-${slug}.png`));
-    }
     const facts = await pageFacts(page);
-    writeJson(path.join(evidenceDir, "uxr-dump.json"), facts);
-    result.artifacts.push(path.join(evidenceDir, "uxr-dump.json"));
+    writeJson(path.join(evidenceDir, "no-case-studies-dump.json"), facts);
+    result.artifacts.push(path.join(evidenceDir, "no-case-studies-dump.json"));
+    const joined = facts.headings.join(" | ");
+    note("no-user-research-heading", !/User Research/i.test(joined), joined);
+    note("no-program-management", !/PROGRAM MANAGEMENT/i.test(joined), joined);
+    note("no-communication-heading", !facts.headings.includes("Communication"), joined);
+    note("no-ops-optimisation", !/Ops Optimisation/i.test(joined), joined);
+    note("no-uxr-tabs", facts.uxrTabsCount === 0, String(facts.uxrTabsCount));
+    note("no-program-tabs", facts.programTabsCount === 0, String(facts.programTabsCount));
+    note("no-ops-tabs", facts.opsTabsCount === 0, String(facts.opsTabsCount));
+    await shot(page, path.join(evidenceDir, "page-after-portfolio.png"), null);
+    result.artifacts.push(path.join(evidenceDir, "page-after-portfolio.png"));
   });
 }
 
@@ -683,7 +692,13 @@ async function pageFacts(page) {
     const bioHtml = bio ? bio.innerHTML : "";
     const face = document.getElementById("uh-face-portfolio");
     const past = document.querySelector("h1.heading-6");
-    const uxr = document.querySelector("h1.heading-5");
+    const uxr = [...document.querySelectorAll("h1.heading-5")].find((el) => /User Research/i.test(el.textContent || ""));
+    const insightRoot = [...document.querySelectorAll("h1.heading-3")].find((el) => /Human Insights/.test(el.textContent || ""));
+    const insightLinks = insightRoot && insightRoot.parentElement
+      ? [...insightRoot.parentElement.querySelectorAll("a.link-3")].map((a) => text(a))
+      : [];
+    const insightRow = insightRoot && insightRoot.parentElement && insightRoot.parentElement.querySelector(".uh-plain-links");
+    const insightLinksOneLine = !!(insightRow && insightLinks.join(" ") === "Contact LinkedIn");
     const orderAroundFace = {
       pastNext: past && past.parentElement ? past.parentElement.nextElementSibling && past.parentElement.nextElementSibling.id : null,
       facePrev: face && face.previousElementSibling ? text(face.previousElementSibling).slice(0, 80) : null,
@@ -693,9 +708,13 @@ async function pageFacts(page) {
       title: document.title,
       url: location.href,
       hero: text(document.querySelector("h1.heading-8")),
+      subtitle: text(document.querySelector(".text-block-15")),
       bioHeading: text(document.querySelector("h1.body")),
       pastProjects: text(document.querySelector("h1.heading-6")),
-      userResearch: text(document.querySelector("h1.heading-5")),
+      portfolio: text(document.querySelector("h1.heading-6")),
+      userResearch: uxr ? text(uxr) : "",
+      insightLinks,
+      insightLinksOneLine,
       hasUhBio: !!bio,
       chipLabels: chips.map((c) => c.label),
       chips,
@@ -719,18 +738,26 @@ async function pageFacts(page) {
       faceTitle: face ? face.getAttribute("title") : "",
       faceHeight: face ? parseInt(face.style.height || "0", 10) : 0,
       faceAfterPastProjects: !!(face && past && (face.compareDocumentPosition(past) & Node.DOCUMENT_POSITION_PRECEDING)),
+      faceAfterPortfolio: !!(face && past && (face.compareDocumentPosition(past) & Node.DOCUMENT_POSITION_PRECEDING)),
       faceBeforeUserResearch: !!(face && uxr && (face.compareDocumentPosition(uxr) & Node.DOCUMENT_POSITION_FOLLOWING)),
       orderAroundFace,
       currentTab: document.querySelector("a.w-tab-link.w--current") && document.querySelector("a.w-tab-link.w--current").getAttribute("data-w-tab"),
+      uxrTabsCount: document.querySelectorAll(".uxr-tabs").length,
+      programTabsCount: document.querySelectorAll(".program-tabs").length,
+      opsTabsCount: document.querySelectorAll(".ops-tabs").length,
     };
   });
 
   if (faceFrame) {
     facts.specimenIds = await faceFrame.$$eval("article.project[id^='specimen-']", (els) => els.map((e) => e.id));
+    facts.visibleSpecimenIds = await faceFrame.$$eval("article.project[id^='specimen-']:not([hidden])", (els) => els.map((e) => e.id));
+    facts.selectedSpecimenHref = await faceFrame.$eval("nav.specimen-index a.is-selected, nav.specimen-index a[aria-current='true']", (el) => el.getAttribute("href")).catch(() => null);
     facts.firstDemoOpen = await faceFrame.$eval("article#specimen-01 details.specimen-demo", (el) => el.open).catch(() => null);
     facts.faceFrameTitle = await faceFrame.title();
   } else {
     facts.specimenIds = [];
+    facts.visibleSpecimenIds = [];
+    facts.selectedSpecimenHref = null;
     facts.firstDemoOpen = null;
   }
 
@@ -740,9 +767,11 @@ async function pageFacts(page) {
     `TITLE ${facts.title}`,
     `URL ${facts.url}`,
     `HERO ${facts.hero}`,
+    `SUBTITLE ${facts.subtitle}`,
     `BIO ${facts.bioHeading}`,
-    `PAST ${facts.pastProjects}`,
+    `PORTFOLIO ${facts.portfolio}`,
     `UXR ${facts.userResearch}`,
+    `INSIGHTS ${JSON.stringify(facts.insightLinks)} oneLine=${facts.insightLinksOneLine}`,
     `CHIPS ${facts.chipLabels.join(", ")}`,
     `CARD hidden=${facts.cardHidden} place=${facts.cardPlace} ${facts.cardText || ""}`,
     `BOXES ${facts.boxCount}`,
