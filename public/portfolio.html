@@ -26,11 +26,11 @@
       --shadow:none
     }
     *{box-sizing:border-box}
-    html{scroll-behavior:smooth;background:#ffffff;color-scheme:light}
-    body{margin:0;background:#ffffff;color:#030303;font:16px/1.55 Roboto,sans-serif}
+    html{scroll-behavior:smooth;background:#ffffff;color-scheme:light;height:auto;min-height:0}
+    body{margin:0;background:#ffffff;color:#030303;font:16px/1.55 Roboto,sans-serif;height:auto;min-height:0}
     a{color:inherit}
     button{font:inherit}
-    .shell{max-width:940px;width:100%;margin:0 auto;padding:0 0 48px;background:#ffffff}
+    .shell{max-width:940px;width:100%;margin:0 auto;padding:0 0 16px;background:#ffffff}
     #work{margin:0}
     .specimen-index{margin:8px 0 28px}
     .specimen-index a{
@@ -149,7 +149,7 @@
     footer{padding:28px 0 45px;color:#767676;font-size:.82rem;border-top:1px solid #767676}
     @media(max-width:991px){.shell{max-width:728px}}
     @media(max-width:560px){
-      .shell{max-width:none;padding:0 10px 40px}
+      .shell{max-width:none;padding:0 10px 16px}
       .metrics{grid-template-columns:1fr}
       .project-title{display:block}
       .status{display:inline;margin-top:8px}

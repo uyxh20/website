@@ -18,31 +18,38 @@
 (function () {
   var frame = document.getElementById("uh-face-portfolio");
   if (!frame) return;
+  var fitting = false;
   function fit() {
+    if (fitting) return;
+    fitting = true;
     try {
       var doc = frame.contentDocument || frame.contentWindow.document;
-      if (!doc || !doc.documentElement) return;
-      var height = Math.max(
-        doc.documentElement.scrollHeight,
-        doc.body ? doc.body.scrollHeight : 0
-      );
-      if (height > 0) {
+      if (!doc) return;
+      var shell = doc.querySelector("main.shell") || doc.body;
+      if (!shell) return;
+      var height = Math.ceil(Math.max(shell.offsetHeight, shell.getBoundingClientRect().height));
+      if (height > 0 && String(height) !== String(parseInt(frame.style.height, 10))) {
         frame.style.height = height + "px";
       }
     } catch (e) {}
+    fitting = false;
   }
   frame.addEventListener("load", function () {
     fit();
-    [50, 200, 500, 1200].forEach(function (ms) { setTimeout(fit, ms); });
+    [50, 250, 800].forEach(function (ms) { setTimeout(fit, ms); });
     try {
       var doc = frame.contentDocument || frame.contentWindow.document;
-      if (window.ResizeObserver && doc) {
+      if (!doc) return;
+      if (window.ResizeObserver) {
         var ro = new ResizeObserver(fit);
-        ro.observe(doc.documentElement);
-        if (doc.body) ro.observe(doc.body);
+        var shell = doc.querySelector("main.shell");
+        if (shell) ro.observe(shell);
       } else {
         setInterval(fit, 1000);
       }
+      doc.querySelectorAll("details").forEach(function (node) {
+        node.addEventListener("toggle", fit);
+      });
     } catch (e) {
       setInterval(fit, 1000);
     }
