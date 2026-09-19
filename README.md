@@ -1,6 +1,8 @@
 # Ulysse Ha — personal site
 
-Carbon copy of [ulysseh.webflow.io](https://ulysseh.webflow.io/) with the Face interactive portfolio appended on the same page. No new nav, buttons, or rewritten copy.
+Carbon copy of [ulysseh.webflow.io](https://ulysseh.webflow.io/) with the Face product specimens on the same page, directly under **Past Projects** and before the User Research tabs.
+
+Face page chrome uses the Webflow tokens (white, Roboto, 940px). Interactive demos stay nested inside each specimen. No extra site nav, chips, or copy rewrites.
 
 ## Run locally
 
@@ -9,6 +11,8 @@ npm install
 npm run dev
 ```
 
-Dev server: [http://127.0.0.1:43141](http://127.0.0.1:43141)
+Dev server: [http://127.0.0.1:43177](http://127.0.0.1:43177)
 
-`scripts/assemble-site.py` rebuilds `public/site.html` from the live Webflow page and local `public/portfolio.html`.
+`/` serves `public/site.html`.
+
+`scripts/assemble-site.py` re-injects local `public/portfolio.html` after the Past Projects heading. It does not append Face at `</body>`. Pass `--from-live` only when you intend to re-fetch the Webflow page.
