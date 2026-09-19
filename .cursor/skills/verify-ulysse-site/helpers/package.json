@@ -1,0 +1,12 @@
+{
+  "name": "control-ulysse",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Verification scaffolding for the Ulysse H site. Not part of the served app.",
+  "bin": {
+    "control-ulysse": "./control-ulysse"
+  },
+  "dependencies": {
+    "playwright-core": "1.55.0"
+  }
+}

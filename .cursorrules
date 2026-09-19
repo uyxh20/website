@@ -5,12 +5,18 @@ Keep the one-page Webflow canvas. Face lives under Past Projects, restyled to Pa
 1. Carbon-copy ulysseh.webflow.io into public/site.html.
 2. Relocate Face after h1.heading-6 Past Projects, before User Research tabs.
 3. Restyle Face page chrome to Webflow tokens; demos may stay dark inside specimens.
+4. Bio: dotted map; eight coral chips (Paris, Hong Kong, Bath, Shanghai, Chengdu, Shenzhen, London, Copenhagen). Click = popover card (docked under the map on mobile). No Gantt JPEG, no View full timeline. Owner copy from bio-map.md only.
 
 [Knowledge Learned]
+2026-09-19 — Verification of the served site uses `.cursor/skills/verify-ulysse-site/` (`control-ulysse`). Isolate on a port other than 43177/43241; never pkill next/chrome. Evidence directories survive cleanup; scratch is `/tmp/ulysse-verify-<run>/`.
+2026-09-19 — Next 16 refuses a second `next dev` in the same checkout (`.next/dev/lock`). Verify launch sets `ULYSSE_VERIFY_DIST_DIR=.next-verify/<run>` via `next.config.ts`; do not kill the 43241 preview.
+2026-09-19 — Bio chips are eight cities. Card is `#uh-bio-card` (popover desktop, docked under the map on mobile). No View full timeline / Timeline.jpg lightbox. `bio-map-from-timeline.jpg` is the dotted map crop, not the Gantt.
+2026-09-19 — `.uh-bio-map{overflow:hidden}` makes a stacking context, so a sibling `#uh-bio-card` paints over chips even if chips have a higher z-index. Keep map overflow visible; chips z-index above the card. Park Europe cards west of the pin (Atlantic); Asia cards below the pin. Shanghai and Hong Kong labels sit east of the pin so they do not cover Shenzhen. Chip hit target is the 44px pin; city labels use `pointer-events:none`.
 2026-09-19 — github.com/uyxh20/FaceSo 404s. Dashboard is private uyxh20/Face, file public/portfolio.html.
 2026-09-19 — U H: first slice is carbon copy + append, not a redesigned Work/Background/Writings app.
 2026-09-19 — assemble-site.py must inject Face after the Past Projects heading, never at </body>. Re-running on local site.html preserves the carbon copy; --from-live re-fetches Webflow.
 2026-09-19 — iframe min-height:100vh flashes a second page; size from load with white ground.
+2026-09-19 — Webflow “Made in Webflow” badge is injected by webflow.js brand module when html[data-wf-domain] is *.webflow.io and hostname differs. No-op brand.ready and drop that attribute; CSS hide is backup. Do not restyle Face demos in the Bio slice.
 
 [Project Styles]
 Do not rewrite Webflow copy. Keep live-site typos and links.
