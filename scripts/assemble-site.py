@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
-"""Assemble a carbon copy of ulysseh.webflow.io plus the Face portfolio append."""
+"""Assemble the Webflow carbon copy plus Face, injected after Past Projects."""
 
 from __future__ import annotations
 
+import argparse
 import re
 import urllib.parse
 import urllib.request
@@ -21,6 +22,55 @@ REWRITE_PREFIXES = (
     "http://uploads-ssl.webflow.com/",
     "https://d3e54v103j8qbb.cloudfront.net/",
 )
+
+PAST_PROJECTS_HEADING = (
+    '<div class="w-container"><h1 class="heading-6">Past Projects</h1></div>'
+)
+
+FACE_BLOCK_RE = re.compile(
+    r'\s*<iframe id="uh-face-portfolio"[\s\S]*?</iframe>\s*'
+    r'(?:<script>[\s\S]*?uh-face-portfolio[\s\S]*?</script>\s*)?',
+    re.I,
+)
+
+APPEND = """
+<iframe id="uh-face-portfolio" src="/portfolio.html" title="Ulysse AI Product and Transformation Portfolio" style="display:block;width:100%;border:0;margin:0;padding:0;background:#ffffff;height:0;min-height:0;overflow:hidden"></iframe>
+<script>
+(function () {
+  var frame = document.getElementById("uh-face-portfolio");
+  if (!frame) return;
+  function fit() {
+    try {
+      var doc = frame.contentDocument || frame.contentWindow.document;
+      if (!doc || !doc.documentElement) return;
+      var height = Math.max(
+        doc.documentElement.scrollHeight,
+        doc.body ? doc.body.scrollHeight : 0
+      );
+      if (height > 0) {
+        frame.style.height = height + "px";
+      }
+    } catch (e) {}
+  }
+  frame.addEventListener("load", function () {
+    fit();
+    [50, 200, 500, 1200].forEach(function (ms) { setTimeout(fit, ms); });
+    try {
+      var doc = frame.contentDocument || frame.contentWindow.document;
+      if (window.ResizeObserver && doc) {
+        var ro = new ResizeObserver(fit);
+        ro.observe(doc.documentElement);
+        if (doc.body) ro.observe(doc.body);
+      } else {
+        setInterval(fit, 1000);
+      }
+    } catch (e) {
+      setInterval(fit, 1000);
+    }
+  });
+})();
+</script>
+"""
 
 
 def fetch(url: str) -> bytes:
@@ -72,49 +122,13 @@ def collect_urls(html: str) -> list[str]:
 
 
 def rewrite_html(html: str, mapping: dict[str, str]) -> str:
-    # Longest first so srcset variants don't partially collide wrongly
     for remote, local in sorted(mapping.items(), key=lambda kv: len(kv[0]), reverse=True):
         html = html.replace(remote, local)
         html = html.replace(urllib.parse.unquote(remote), local)
     return html
 
 
-APPEND = """
-<iframe id="uh-face-portfolio" src="/portfolio.html" title="Ulysse AI Product and Transformation Portfolio" style="display:block;width:100%;border:0;margin:0;padding:0;min-height:100vh;height:100vh"></iframe>
-<script>
-(function () {
-  var frame = document.getElementById("uh-face-portfolio");
-  if (!frame) return;
-  function fit() {
-    try {
-      var doc = frame.contentDocument || frame.contentWindow.document;
-      var height = Math.max(
-        doc.documentElement.scrollHeight,
-        doc.body.scrollHeight
-      );
-      frame.style.height = height + "px";
-    } catch (e) {}
-  }
-  frame.addEventListener("load", function () {
-    fit();
-    try {
-      var doc = frame.contentDocument || frame.contentWindow.document;
-      if (window.ResizeObserver) {
-        new ResizeObserver(fit).observe(doc.documentElement);
-        new ResizeObserver(fit).observe(doc.body);
-      } else {
-        setInterval(fit, 1000);
-      }
-    } catch (e) {
-      setInterval(fit, 1000);
-    }
-  });
-})();
-</script>
-"""
-
-
-def main() -> None:
+def fetch_live() -> str:
     WEBFLOW_DIR.mkdir(parents=True, exist_ok=True)
     html = fetch(LIVE).decode("utf-8", errors="replace")
     mapping: dict[str, str] = {}
@@ -126,15 +140,49 @@ def main() -> None:
             dest.write_bytes(fetch(url.split("?")[0] if "cloudfront" not in url else url))
         mapping[url] = public_url_for(url)
         mapping[url.split("?")[0]] = public_url_for(url)
+    return rewrite_html(html, mapping)
 
-    html = rewrite_html(html, mapping)
+
+def inject_face(html: str) -> str:
+    html = FACE_BLOCK_RE.sub("\n", html)
+    if PAST_PROJECTS_HEADING not in html:
+        raise SystemExit(
+            "Past Projects heading not found; refusing to append Face at </body>"
+        )
     if "</body>" not in html.lower():
         raise SystemExit("no body close tag")
-    # Append Face portfolio on the same canvas, after the Webflow clone.
-    html = re.sub(r"</body>", APPEND + "</body>", html, count=1, flags=re.I)
+    return html.replace(PAST_PROJECTS_HEADING, PAST_PROJECTS_HEADING + APPEND, 1)
+
+
+def face_is_before_user_research(html: str) -> bool:
+    face_at = html.find('id="uh-face-portfolio"')
+    ur_at = html.find("User Research")
+    body_close = re.search(r"</body>", html, flags=re.I)
+    if face_at < 0 or ur_at < 0 or body_close is None:
+        return False
+    return face_at < ur_at < body_close.start()
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--from-live",
+        action="store_true",
+        help="Re-fetch ulysseh.webflow.io instead of re-injecting into local site.html",
+    )
+    args = parser.parse_args()
 
     if not PORTFOLIO.exists():
         raise SystemExit("missing public/portfolio.html")
+
+    if args.from_live or not SITE.exists():
+        html = fetch_live()
+    else:
+        html = SITE.read_text()
+
+    html = inject_face(html)
+    if not face_is_before_user_research(html):
+        raise SystemExit("Face iframe is not under Past Projects / before User Research")
 
     SITE.write_text(html)
     print("wrote", SITE, "bytes", SITE.stat().st_size)
