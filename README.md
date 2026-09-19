@@ -8,7 +8,9 @@ Bio keeps the dotted map. Eight coral circle chips (Paris, Hong Kong, Bath, Shan
 
 Face page chrome uses the Webflow tokens (white, Roboto, 940px). Interactive demos stay nested inside each specimen. No extra site nav, chips, or copy rewrites.
 
-This repo is **private**. GitHub Pages is not enabled and should stay off.
+This repo is **private**. The public page is GitHub Pages at [https://uyxh20.github.io/website/](https://uyxh20.github.io/website/) when the account plan allows Pages from a private repo. The published site is public; the git history stays private. Do not flip this repository to public to work around a Free-plan Pages block.
+
+Static files live in `public/` (`site.html`, `portfolio.html`, `webflow/` assets). GitHub Pages copies those files to the site root and serves `site.html` as `index.html`. Asset paths are relative so they work at `/` locally and at `/website/` on Pages.
 
 ## Clone and run
 

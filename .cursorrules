@@ -17,7 +17,10 @@ Keep the one-page Webflow canvas. Face lives under Past Projects, restyled to Pa
 2026-09-19 — assemble-site.py must inject Face after the Past Projects heading, never at </body>. Re-running on local site.html preserves the carbon copy; --from-live re-fetches Webflow.
 2026-09-19 — iframe min-height:100vh flashes a second page; size from load with white ground.
 2026-09-19 — Webflow “Made in Webflow” badge is injected by webflow.js brand module when html[data-wf-domain] is *.webflow.io and hostname differs. No-op brand.ready and drop that attribute; CSS hide is backup. Do not restyle Face demos in the Bio slice.
+2026-09-19 — GitHub Pages project URL is `/website/`. Root-absolute `/webflow/` and `/portfolio.html` 404 there; use relative `webflow/` and `portfolio.html` (also works at local `/`).
+2026-09-19 — GitHub Free personal accounts cannot publish Pages from a private repo; Pro can (site still public). If Pages is blocked on private `uyxh20/website`, stop and report — do not silently make the repo public.
 
 [Project Styles]
 Do not rewrite Webflow copy. Keep live-site typos and links.
 Face demo interiors: Palette 1 `#222` canvas + `#1a1b1f` primary; Palette 2 `#ff6b6b` only for selection/highlights. No Made in Webflow badge.
+GitHub Pages static root is `public/` with relative asset paths; `site.html` is copied to `index.html` in the Pages artifact.
