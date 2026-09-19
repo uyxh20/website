@@ -4,12 +4,14 @@
 .uh-bio-stage{position:relative;isolation:isolate}
 .uh-bio-map{position:relative;width:66.666%;margin-left:auto;margin-right:auto;overflow:visible;background:#fff;line-height:0}
 .uh-bio-map img{display:block;width:100%;height:auto;max-width:100%;border:0}
-.uh-bio-chip{position:absolute;display:flex;align-items:center;justify-content:center;width:44px;height:44px;border:0;margin:0;padding:0;background:transparent;cursor:pointer;font-family:Roboto,sans-serif;transform:translate(-50%,-50%);z-index:4}
+.uh-bio-chip{position:absolute;display:flex;align-items:center;justify-content:center;width:44px;height:44px;border:0;margin:0;padding:0;background:transparent;cursor:pointer;font-family:Roboto,sans-serif;transform:translate(-50%,-50%);z-index:4;pointer-events:none}
 .uh-bio-chip:focus-visible,.uh-bio-card:focus-visible{outline:2px solid #ff6a63;outline-offset:2px}
-.uh-bio-dot{display:block;width:14px;height:14px;border-radius:50%;background:#ff6a63;flex:0 0 14px;box-shadow:0 0 0 2px #fff}
+.uh-bio-chip:hover,.uh-bio-chip:focus-within{z-index:8}
+.uh-bio-dot{display:block;width:14px;height:14px;border-radius:50%;background:#ff6a63;flex:0 0 14px;box-shadow:0 0 0 2px #fff;pointer-events:auto;cursor:pointer}
 .uh-bio-chip.is-active .uh-bio-dot{box-shadow:0 0 0 2px #fff,0 0 0 4px #030303}
-.uh-bio-city{position:absolute;right:calc(50% + 14px);top:50%;transform:translateY(-50%);pointer-events:none;font-size:12px;font-weight:500;letter-spacing:.02em;line-height:1;color:#030303;white-space:nowrap;background:#fff;padding:2px 4px}
+.uh-bio-city{position:absolute;right:calc(50% + 14px);top:50%;transform:translateY(-50%);pointer-events:auto;cursor:pointer;z-index:6;font-size:12px;font-weight:500;letter-spacing:.02em;line-height:1;color:#030303;white-space:nowrap;background:#fff;padding:2px 4px}
 .uh-bio-chip--east .uh-bio-city{right:auto;left:calc(50% + 14px)}
+.uh-bio-chip--north .uh-bio-city{right:auto;left:50%;top:auto;bottom:calc(50% + 14px);transform:translate(-50%,0)}
 .uh-bio-card{background:#fff;border:1px solid #767676;border-radius:0;box-shadow:none;padding:12px 14px 14px;font-family:Roboto,sans-serif;color:#030303;font-size:14px;font-weight:400;line-height:1.5;z-index:3}
 .uh-bio-card[hidden]{display:none!important}
 .uh-bio-card-city{margin:0 0 8px;font-size:14px;font-weight:500;color:#030303}
@@ -32,8 +34,8 @@
 <div class="uh-bio-stage">
 <div class="uh-bio-map" role="group" aria-label="Paris Hong Kong Bath Shanghai Chengdu Shenzhen London Copenhagen">
 <img src="webflow/63739a1a9aade5340c441d9f/bio-map-from-timeline.jpg" alt="" width="830" height="480"/>
-<button type="button" class="uh-bio-chip" data-place="copenhagen" style="left:54.94%;top:21.88%" aria-controls="uh-bio-card" aria-expanded="false"><span class="uh-bio-city">Copenhagen</span><span class="uh-bio-dot"></span></button>
-<button type="button" class="uh-bio-chip uh-bio-chip--east" data-place="london" style="left:49.56%;top:29.10%" aria-controls="uh-bio-card" aria-expanded="false"><span class="uh-bio-city">London</span><span class="uh-bio-dot"></span></button>
+<button type="button" class="uh-bio-chip uh-bio-chip--east" data-place="copenhagen" style="left:54.94%;top:21.88%" aria-controls="uh-bio-card" aria-expanded="false"><span class="uh-bio-city">Copenhagen</span><span class="uh-bio-dot"></span></button>
+<button type="button" class="uh-bio-chip uh-bio-chip--north" data-place="london" style="left:49.56%;top:29.10%" aria-controls="uh-bio-card" aria-expanded="false"><span class="uh-bio-city">London</span><span class="uh-bio-dot"></span></button>
 <button type="button" class="uh-bio-chip" data-place="bath" style="left:48.21%;top:31.53%" aria-controls="uh-bio-card" aria-expanded="false"><span class="uh-bio-city">Bath</span><span class="uh-bio-dot"></span></button>
 <button type="button" class="uh-bio-chip uh-bio-chip--east" data-place="paris" style="left:52.28%;top:31.52%" aria-controls="uh-bio-card" aria-expanded="false"><span class="uh-bio-city">Paris</span><span class="uh-bio-dot"></span></button>
 <button type="button" class="uh-bio-chip" data-place="chengdu" style="left:73.87%;top:33.94%" aria-controls="uh-bio-card" aria-expanded="false"><span class="uh-bio-city">Chengdu</span><span class="uh-bio-dot"></span></button>
