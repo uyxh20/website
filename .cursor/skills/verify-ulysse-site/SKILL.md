@@ -62,7 +62,7 @@ If doctor fails, **cleanup** (so the broken attempt does not keep the port) then
 
 ## Drive
 
-Harness: Playwright-core over CDP against the Chrome this run started (`control-ulysse browser` / `control-ulysse drive`). Stable handles from `public/site.html` and `public/portfolio.html`:
+Harness: Playwright-core launches a short-lived headless Chrome for each `browser` / `drive` command against the isolated Next URL (`control-ulysse browser` / `control-ulysse drive`). Do not attach to the preview on 43241. Stable handles from `public/site.html` and `public/portfolio.html`:
 
 | Handle | What it is |
 | --- | --- |
