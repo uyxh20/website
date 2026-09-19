@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Assemble the Webflow carbon copy plus Face, injected after Past Projects."""
+"""Assemble the Webflow carbon copy plus Face, injected after Portfolio."""
 
 from __future__ import annotations
 
@@ -9,7 +9,7 @@ import urllib.parse
 import urllib.request
 from pathlib import Path
 
-ROOT = Path("/workspace")
+ROOT = Path(__file__).resolve().parent.parent
 PUBLIC = ROOT / "public"
 WEBFLOW_DIR = PUBLIC / "webflow"
 SITE = PUBLIC / "site.html"
@@ -23,8 +23,16 @@ REWRITE_PREFIXES = (
     "https://d3e54v103j8qbb.cloudfront.net/",
 )
 
-PAST_PROJECTS_HEADING = (
+PORTFOLIO_HEADING = (
+    '<div class="w-container"><h1 class="heading-6">Portfolio</h1></div>'
+)
+LEGACY_PAST_PROJECTS_HEADING = (
     '<div class="w-container"><h1 class="heading-6">Past Projects</h1></div>'
+)
+CASE_STUDY_RE = re.compile(
+    r'\s*<div class="w-container"><h1 class="heading-5">User Research'
+    r'[\s\S]*?(?=<script src="(?:/)?webflow/js/jquery)',
+    re.I,
 )
 
 FACE_BLOCK_RE = re.compile(
@@ -164,24 +172,44 @@ def strip_webflow_badge(html: str) -> str:
     return html
 
 
+def normalize_portfolio_heading(html: str) -> str:
+    if PORTFOLIO_HEADING in html:
+        return html
+    if LEGACY_PAST_PROJECTS_HEADING in html:
+        return html.replace(LEGACY_PAST_PROJECTS_HEADING, PORTFOLIO_HEADING, 1)
+    raise SystemExit(
+        "Portfolio heading not found; refusing to append Face at </body>"
+    )
+
+
+def strip_case_studies(html: str) -> str:
+    html, n = CASE_STUDY_RE.subn("\n", html, count=1)
+    return html
+
+
 def inject_face(html: str) -> str:
     html = FACE_BLOCK_RE.sub("\n", html)
-    if PAST_PROJECTS_HEADING not in html:
-        raise SystemExit(
-            "Past Projects heading not found; refusing to append Face at </body>"
-        )
+    html = normalize_portfolio_heading(html)
+    html = strip_case_studies(html)
     if "</body>" not in html.lower():
         raise SystemExit("no body close tag")
-    return html.replace(PAST_PROJECTS_HEADING, PAST_PROJECTS_HEADING + APPEND, 1)
+    return html.replace(PORTFOLIO_HEADING, PORTFOLIO_HEADING + APPEND, 1)
 
 
-def face_is_before_user_research(html: str) -> bool:
+def face_is_under_portfolio(html: str) -> bool:
     face_at = html.find('id="uh-face-portfolio"')
-    ur_at = html.find("User Research")
-    body_close = re.search(r"</body>", html, flags=re.I)
-    if face_at < 0 or ur_at < 0 or body_close is None:
+    heading_at = html.find(PORTFOLIO_HEADING)
+    if face_at < 0 or heading_at < 0 or face_at < heading_at:
         return False
-    return face_at < ur_at < body_close.start()
+    for banned in (
+        "User Research",
+        "PROGRAM MANAGEMENT",
+        "Ops Optimisation",
+        '<h1 class="heading-5">Communication</h1>',
+    ):
+        if banned in html:
+            return False
+    return True
 
 
 def main() -> None:
@@ -203,8 +231,8 @@ def main() -> None:
 
     html = strip_webflow_badge(inject_face(html))
     html = make_site_relative(html)
-    if not face_is_before_user_research(html):
-        raise SystemExit("Face iframe is not under Past Projects / before User Research")
+    if not face_is_under_portfolio(html):
+        raise SystemExit("Face iframe is not under Portfolio, or case studies remain")
 
     SITE.write_text(html)
     print("wrote", SITE, "bytes", SITE.stat().st_size)
