@@ -8,7 +8,7 @@ Bio keeps the dotted map. Eight coral circle chips (Paris, Hong Kong, Bath, Shan
 
 Face page chrome uses the Webflow tokens (white, Roboto, 940px). Interactive demos stay nested inside each specimen. No extra site nav, chips, or copy rewrites.
 
-This repo is **private**. Intended public URL: [https://uyxh20.github.io/website/](https://uyxh20.github.io/website/). GitHub Pages is **not live yet**. Actions `GITHUB_TOKEN` cannot create a Pages site (admin API). Do not make this repository public to work around that. After Pages is enabled in the GitHub UI (Settings → Pages → Source → GitHub Actions), the `Deploy GitHub Pages` workflow publishes `public/` (`site.html` as `index.html`, plus `portfolio.html` and `webflow/` assets). Asset paths are relative so they work at `/` locally and at `/website/` on Pages.
+U H asked for this repository to be **public** with GitHub Pages at [https://uyxh20.github.io/website/](https://uyxh20.github.io/website/). Visibility is still **private** until an admin token or the GitHub UI flips it (`PATCH /repos` / Settings → General → Change repository visibility). GitHub Pages is **not live yet**. Actions `GITHUB_TOKEN` cannot create a Pages site. After the repo is public, enable Settings → Pages → Source → **GitHub Actions**; the `Deploy GitHub Pages` workflow then publishes `public/` (`site.html` as `index.html`, plus `portfolio.html` and `webflow/` assets). Asset paths are relative so they work at `/` locally and at `/website/` on Pages.
 
 ## Clone and run
 
