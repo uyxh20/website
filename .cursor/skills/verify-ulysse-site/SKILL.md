@@ -27,7 +27,7 @@ $CONTROL launch --port 43311 --run-id "$ULYSSE_VERIFY_RUN"
 
 What this starts:
 
-- `node_modules/.bin/next dev --port <port> --hostname 127.0.0.1` in this repo.
+- `node_modules/.bin/next dev --port <port> --hostname 127.0.0.1` with `ULYSSE_VERIFY_DIST_DIR=.next-verify/<run-id>`. Next 16 exclusive-locks `<distDir>/lock` (the live preview uses `.next/dev/lock` on 43241). A second instance must not steal that lock and must not `kill` the preview pid.
 - Headless Google Chrome (`$CHROME_PATH`, default `/usr/local/bin/google-chrome`) with a unique `--user-data-dir` under `/tmp/ulysse-verify-<run-id>/` and a CDP port.
 
 Ready when `GET http://127.0.0.1:<port>/` returns **200**, `<title>Ulysse H</title>`, and the HTML contains `id="uh-bio"`. The helper blocks until that is true (about a minute on a cold Next compile) and prints JSON with `url`, `pid`, `chromePid`, `cdp`, and `runDir`.

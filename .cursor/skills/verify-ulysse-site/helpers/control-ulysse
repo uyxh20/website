@@ -128,11 +128,20 @@ async function launch() {
   const nextBin = path.join(repo, "node_modules", ".bin", "next");
   if (!fs.existsSync(nextBin)) throw new Error(`next binary missing at ${nextBin}; run npm install in the repo`);
 
+  // Next 16 exclusive-locks <distDir>/lock (default .next/dev/lock). A preview on
+  // 43241 already holds that lock. Give this run its own distDir inside the repo.
+  const distDir = `.next-verify/${runId}`;
+  fs.mkdirSync(path.join(repo, distDir), { recursive: true });
+
   const child = spawn(nextBin, ["dev", "--port", String(port), "--hostname", "127.0.0.1"], {
     cwd: repo,
     detached: true,
     stdio: ["ignore", logFd, logFd],
-    env: { ...process.env, PORT: String(port) },
+    env: {
+      ...process.env,
+      PORT: String(port),
+      ULYSSE_VERIFY_DIST_DIR: distDir,
+    },
   });
   const pid = child.pid;
   child.unref();
@@ -140,7 +149,7 @@ async function launch() {
 
   const url = `http://127.0.0.1:${port}`;
   try {
-    await waitForSite(url, 90000);
+    await waitForSite(url, 90000, { pid, logPath });
   } catch (err) {
     tryKill(pid, `--port ${port}`);
     throw err;
@@ -195,6 +204,7 @@ async function launch() {
     logPath,
     chromeLog,
     runDir,
+    distDir,
     startedAt: new Date().toISOString(),
   };
   writeState(state);
@@ -290,6 +300,12 @@ async function cleanup() {
   const runDir = state.runDir;
   if (runDir && runDir.startsWith(path.join(os.tmpdir(), "ulysse-verify-"))) {
     fs.rmSync(runDir, { recursive: true, force: true });
+  }
+  if (state.distDir && /^\.next-verify\/[A-Za-z0-9._-]+$/.test(state.distDir) && state.repo) {
+    const distAbs = path.join(state.repo, state.distDir);
+    if (distAbs.startsWith(path.join(state.repo, ".next-verify") + path.sep)) {
+      fs.rmSync(distAbs, { recursive: true, force: true });
+    }
   }
   const sp = statePath();
   if (fs.existsSync(sp) && !sp.startsWith(path.join(os.tmpdir(), "ulysse-verify-"))) {
@@ -992,10 +1008,20 @@ async function waitHttpOk(url, ms) {
   throw new Error(`${url} not ready: ${last}`);
 }
 
-async function waitForSite(url, ms) {
+async function waitForSite(url, ms, opts = {}) {
   const start = Date.now();
   let last = "";
   while (Date.now() - start < ms) {
+    if (opts.pid && !pidAlive(opts.pid)) {
+      const log = opts.logPath && fs.existsSync(opts.logPath) ? fs.readFileSync(opts.logPath, "utf8") : "";
+      throw new Error(`next exited before the site answered ${url}\n${log}`);
+    }
+    if (opts.logPath && fs.existsSync(opts.logPath)) {
+      const log = fs.readFileSync(opts.logPath, "utf8");
+      if (/already running/i.test(log)) {
+        throw new Error(`next refused to start (dev lock). Isolated distDir should prevent this.\n${log}`);
+      }
+    }
     try {
       const home = await fetchHome(url);
       if (home.status === 200 && home.hasBio) return home;
