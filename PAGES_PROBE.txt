@@ -1,0 +1,15 @@
+POST 403
+{
+  "message": "Resource not accessible by integration",
+  "documentation_url": "https://docs.github.com/rest/pages/pages#create-a-apiname-pages-site",
+  "status": "403"
+}
+
+GET 404
+{
+  "message": "Not Found",
+  "documentation_url": "https://docs.github.com/rest/pages/pages#get-a-apiname-pages-site",
+  "status": "404"
+}
+
+RUN 35450536554 3971242a6a5da6e8d9c295f6aa7abc21040f95a9
