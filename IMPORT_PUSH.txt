@@ -1,0 +1,11 @@
+main_status=0
+To https://github.com/uyxh20/website.git
+ + 1f664db...2f75303 HEAD -> main (forced update)
+
+genesis_import_status=0
+remote: 
+remote: Create a pull request for 'genesis-import' on GitHub by visiting:        
+remote:      https://github.com/uyxh20/website/pull/new/genesis-import        
+remote: 
+To https://github.com/uyxh20/website.git
+ * [new branch]      HEAD -> genesis-import
