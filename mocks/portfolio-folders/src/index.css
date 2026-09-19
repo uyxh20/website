@@ -1,0 +1,35 @@
+:root {
+  color: #23231f;
+  background: #e6e3da;
+  --canvas: #e6e3da;
+  --paper: #fffdf7;
+  --paper-soft: #f5f1e8;
+  --paper-line: #23231f;
+  --ink: #23231f;
+  --muted: #706e65;
+  --yellow: #f2dc4b;
+  --yellow-deep: #e7cc31;
+  font-family: 'IBM Plex Sans', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  min-height: 100%;
+  margin: 0;
+}
+
+body {
+  background: var(--canvas);
+  overflow-x: hidden;
+}
