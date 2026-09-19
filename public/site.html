@@ -11,11 +11,11 @@
 .uh-bio-axis{position:relative;height:18px;margin:0 0 6px 0}
 @media (min-width:640px){.uh-bio-axis{margin-left:calc(9.5rem + 12px)}}
 .uh-bio-year{position:absolute;top:0;transform:translateX(-50%);color:#030303;font-size:12px;font-weight:500;line-height:1;white-space:nowrap}
-.uh-bio-lane{display:grid;grid-template-columns:1fr;gap:8px;width:100%;margin:0 0 16px;padding:10px 0;border:0;border-top:1px solid #767676;background:#fff;color:#030303;text-align:left;cursor:pointer;font-family:Roboto,sans-serif;box-shadow:none;border-radius:0}
+.uh-bio-lane{display:grid;grid-template-columns:1fr;justify-items:start;gap:8px;width:100%;margin:0 0 16px;padding:10px 0;border:0;border-top:1px solid #767676;background:#fff;color:#030303;text-align:left;cursor:pointer;font-family:Roboto,sans-serif;box-shadow:none;border-radius:0}
 .uh-bio-lane:last-of-type{margin-bottom:0;border-bottom:1px solid #767676}
 .uh-bio-lane.is-active{background:#fff;outline:1px solid #030303;outline-offset:4px}
 .uh-bio-chip{display:inline-block;background:#1c1c1c;color:#fff;font-size:12px;font-weight:500;letter-spacing:.04em;line-height:1;padding:10px 14px;border:0;border-radius:0;white-space:nowrap}
-.uh-bio-lane-body{position:relative;display:block;min-height:52px}
+.uh-bio-lane-body{position:relative;display:block;min-height:52px;width:100%;justify-self:stretch}
 .uh-bio-callouts{display:flex;flex-wrap:wrap;gap:8px 14px;min-height:0;margin:0 0 8px;color:#030303;font-size:11px;font-weight:400;letter-spacing:.02em;line-height:1.2}
 .uh-bio-callouts span{position:static}
 .uh-bio-track{position:relative;display:block;height:18px;margin-top:2px}
@@ -26,6 +26,8 @@
 .uh-bio-lightbox-src{position:absolute;width:1px;height:1px;opacity:0;overflow:hidden}
 .uh-bio-boxes{margin:8px 0 0}
 .uh-bio-box{border:1px solid #767676;border-radius:0;box-shadow:none;background:#fff;margin:0 0 8px;padding:0}
+.uh-bio-box:not([open]){border:0;margin:0;padding:0}
+.uh-bio-box:not([open]) summary{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0)}
 .uh-bio-box summary{cursor:pointer;list-style:none;font-size:14px;font-weight:500;letter-spacing:.04em;padding:12px 14px}
 .uh-bio-box summary::-webkit-details-marker{display:none}
 .uh-bio-box-body{border-top:1px solid #767676;padding:12px 14px 14px;font-size:14px;font-weight:400;line-height:1.5}
@@ -34,10 +36,10 @@
 @media (max-width:479px){.uh-bio{padding:0 10px}}
 @media (min-width:640px){
   .uh-bio-lane{grid-template-columns:9.5rem 1fr;align-items:center;gap:12px}
-  .uh-bio-callouts{position:relative;display:block;height:28px;margin:0}
+  .uh-bio-callouts{position:relative;display:block;height:32px;margin:0}
   .uh-bio-callouts span{position:absolute;bottom:4px;transform:translateX(-50%);white-space:nowrap}
-  .uh-bio-callouts .uh-bio-callout-left{transform:translateX(0)}
-  .uh-bio-callouts .uh-bio-callout-right{transform:translateX(-100%)}
+  .uh-bio-callouts .uh-bio-callout-left{transform:translateX(0);white-space:normal;max-width:7.5em;line-height:1.15;text-align:left}
+  .uh-bio-callouts .uh-bio-callout-right{transform:none;white-space:nowrap}
 }
 </style>
 <div class="uh-bio-map" role="group" aria-label="UK DENMARK FRANCE HONG KONG">
@@ -52,7 +54,7 @@
 <button type="button" class="uh-bio-lane" data-place="denmark" aria-controls="uh-bio-box-denmark" aria-expanded="false">
 <span class="uh-bio-chip">DENMARK</span>
 <span class="uh-bio-lane-body">
-<span class="uh-bio-callouts"><span class="uh-bio-callout-left" style="left:68.20%">ENTERPRISE APPLICATION</span><span class="uh-bio-callout-right" style="left:82.33%">UX</span></span>
+<span class="uh-bio-callouts"><span class="uh-bio-callout-left" style="left:64.5%">ENTERPRISE APPLICATION</span><span class="uh-bio-callout-right" style="left:81.5%">UX</span></span>
 <span class="uh-bio-track"><i class="uh-bio-bar" style="left:68.20%;width:1.41%"></i><i class="uh-bio-bar" style="left:69.96%;width:1.41%"></i></span>
 </span>
 </button>
