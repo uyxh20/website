@@ -1,0 +1,43 @@
+name: Apply In-Between pass
+on:
+  push:
+    branches: [cursor/in-between-pass-531b]
+    paths:
+      - ".github/workflows/apply-in-between.yml"
+permissions:
+  contents: write
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: cursor/in-between-pass-531b
+          fetch-depth: 0
+      - name: Transform site files
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import base64, gzip
+          from pathlib import Path
+          raw = Path(".github/workflows/_ib_b64.txt").read_text()
+          Path(".github/workflows/apply-in-between.py").write_bytes(base64.b64decode(raw))
+          ctrl = Path(".github/workflows/_ib_ctrl.b64.txt").read_text()
+          dest = Path(".cursor/skills/verify-ulysse-site/helpers/control-ulysse")
+          dest.parent.mkdir(parents=True, exist_ok=True)
+          dest.write_bytes(gzip.decompress(base64.b64decode(ctrl)))
+          dest.chmod(0o755)
+          print("decoded apply", Path(".github/workflows/apply-in-between.py").stat().st_size)
+          print("decoded control", dest.stat().st_size)
+          PY
+          python3 .github/workflows/apply-in-between.py
+          rm -f .github/workflows/_ib_b64.txt .github/workflows/_ib_ctrl.b64.txt .github/workflows/apply-in-between.py .github/workflows/apply-in-between.yml
+      - name: Commit
+        run: |
+          git config user.name "UvU"
+          git config user.email "80995670+uyxh20@users.noreply.github.com"
+          git add -A
+          git status
+          if git diff --cached --quiet; then echo "nothing to commit"; exit 0; fi
+          git commit -m "Ship In-Between layout pass"
+          git push
