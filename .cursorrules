@@ -8,6 +8,7 @@ Keep the one-page Webflow canvas. Face lives under Past Projects, restyled to Pa
 4. Bio: Timeline.jpg dotted map; circle chips with owner city labels (Hong Kong, London, Paris, Copenhagen). No Gantt UI. Box text = JPEG callouts + 2022 only, plus those city labels.
 
 [Knowledge Learned]
+2026-09-19 — Verification of the served site uses `.cursor/skills/verify-ulysse-site/` (`control-ulysse`). Isolate on a port other than 43177/43241; never pkill next/chrome. Evidence directories survive cleanup; scratch is `/tmp/ulysse-verify-<run>/`.
 2026-09-19 — github.com/uyxh20/FaceSo 404s. Dashboard is private uyxh20/Face, file public/portfolio.html.
 2026-09-19 — U H: first slice is carbon copy + append, not a redesigned Work/Background/Writings app.
 2026-09-19 — assemble-site.py must inject Face after the Past Projects heading, never at </body>. Re-running on local site.html preserves the carbon copy; --from-live re-fetches Webflow.

@@ -1,0 +1,1037 @@
+#!/usr/bin/env node
+"use strict";
+
+/**
+ * Verification harness for the Ulysse H personal site.
+ * Invocation is documented in ../SKILL.md. Do not reverse-engineer this file
+ * to invent extra flags; use the commands listed in the skill.
+ */
+
+const { spawn, spawnSync } = require("child_process");
+const fs = require("fs");
+const http = require("http");
+const os = require("os");
+const path = require("path");
+const { createRequire } = require("module");
+
+const HELPERS_DIR = __dirname;
+const SKILL_DIR = path.resolve(HELPERS_DIR, "..");
+const DEFAULT_REPO = findRepo(process.cwd()) || findRepo(path.resolve(SKILL_DIR, "../../.."));
+const RESERVED_PORTS = new Set([3000, 5173, 8080, 43177, 43241]);
+const DEFAULT_PORT = 43311;
+const CHROME =
+  process.env.CHROME_PATH ||
+  ["/usr/local/bin/google-chrome", "/usr/local/bin/chrome", "/usr/bin/google-chrome"].find((p) =>
+    fs.existsSync(p)
+  ) ||
+  "google-chrome";
+
+const PLACES = {
+  "hong-kong": {
+    label: "Hong Kong",
+    strings: ["Hong Kong", "LIFE EMERGED – 2022", "LIFE EMERGED"],
+  },
+  london: {
+    label: "London",
+    strings: ["London", "ESSAYS.. – ANTHRO!", "ESSAYS..", "ANTHRO!"],
+  },
+  paris: {
+    label: "Paris",
+    strings: ["Paris", "GROWING"],
+  },
+  copenhagen: {
+    label: "Copenhagen",
+    strings: ["Copenhagen", "ENTERPRISE APPLICATION – UX", "ENTERPRISE APPLICATION", "UX", "2022"],
+  },
+};
+const PLACE_ORDER = ["hong-kong", "london", "paris", "copenhagen"];
+const BOX_FORBIDDEN = [
+  "Carlsberg",
+  "ethnographic",
+  "University College",
+  "SKU Profitability",
+  "Past Projects",
+];
+
+const argv = process.argv.slice(2);
+const cmd = argv[0];
+const flags = parseFlags(argv.slice(1));
+
+main().catch((err) => {
+  console.error(err && err.stack ? err.stack : String(err));
+  process.exit(1);
+});
+
+async function main() {
+  if (!cmd || cmd === "help" || cmd === "--help" || cmd === "-h") {
+    printHelp();
+    return;
+  }
+  if (cmd === "launch") return launch();
+  if (cmd === "doctor") return doctor();
+  if (cmd === "cleanup") return cleanup();
+  if (cmd === "url") {
+    const state = loadState();
+    process.stdout.write(state.url + "\n");
+    return;
+  }
+  if (cmd === "browser") return browserCmd(argv[1], parseFlags(argv.slice(2)));
+  if (cmd === "drive") return drive();
+  throw new Error(`unknown command: ${cmd}`);
+}
+
+function printHelp() {
+  process.stdout.write(`control-ulysse — drive the Ulysse H site for verification
+
+Usage:
+  control-ulysse launch [--port 43311] [--run-id ID]
+  control-ulysse doctor
+  control-ulysse browser goto --path /
+  control-ulysse browser click --selector SELECTOR [--frame iframe#uh-face-portfolio]
+  control-ulysse browser wait --selector SELECTOR
+  control-ulysse browser viewport --width 1440 --height 900
+  control-ulysse browser screenshot --path FILE [--selector SELECTOR] [--full-page]
+  control-ulysse browser dump --path FILE
+  control-ulysse drive --feature bio-map-chips|home-carbon-copy|face-iframe|user-research-tabs [--evidence DIR] [--places hong-kong,london,paris,copenhagen]
+  control-ulysse cleanup
+
+State: $ULYSSE_VERIFY_STATE or /tmp/ulysse-verify-<run>/state.json
+Never kills by process name. Never drives ports 43177 or 43241 unless this run started them.
+`);
+}
+
+async function launch() {
+  const repo = repoRoot();
+  ensureAppInstalled(repo);
+  ensurePlaywright();
+
+  const runId = String(flags["run-id"] || process.env.ULYSSE_VERIFY_RUN || `run-${Date.now()}`);
+  const runDir = runDirFor(runId);
+  fs.mkdirSync(runDir, { recursive: true });
+
+  const existing = loadStateOptional();
+  if (existing && pidAlive(existing.pid) && cmdlineHas(existing.pid, `--port ${existing.port}`)) {
+    throw new Error(
+      `already launched run ${existing.runId} on ${existing.url} (pid ${existing.pid}). cleanup first.`
+    );
+  }
+
+  const port = pickPort(flags.port ? Number(flags.port) : DEFAULT_PORT);
+  if (RESERVED_PORTS.has(port) && !thisRunOwnsReserved(port, existing)) {
+    throw new Error(
+      `refusing port ${port}: reserved for the documented app (43177) or an already-served preview (43241). Pick another.`
+    );
+  }
+
+  const logPath = path.join(runDir, "next.log");
+  const logFd = fs.openSync(logPath, "w");
+  const nextBin = path.join(repo, "node_modules", ".bin", "next");
+  if (!fs.existsSync(nextBin)) throw new Error(`next binary missing at ${nextBin}; run npm install in the repo`);
+
+  const child = spawn(nextBin, ["dev", "--port", String(port), "--hostname", "127.0.0.1"], {
+    cwd: repo,
+    detached: true,
+    stdio: ["ignore", logFd, logFd],
+    env: { ...process.env, PORT: String(port) },
+  });
+  const pid = child.pid;
+  child.unref();
+  fs.closeSync(logFd);
+
+  const url = `http://127.0.0.1:${port}`;
+  try {
+    await waitForSite(url, 90000);
+  } catch (err) {
+    tryKill(pid, `--port ${port}`);
+    throw err;
+  }
+
+  const cdpPort = pickPort(port + 10000);
+  const chromeProfile = path.join(runDir, "chrome-profile");
+  fs.mkdirSync(chromeProfile, { recursive: true });
+  const chromeLog = path.join(runDir, "chrome.log");
+  const chromeFd = fs.openSync(chromeLog, "w");
+  const chrome = spawn(
+    CHROME,
+    [
+      "--headless=new",
+      "--no-sandbox",
+      "--disable-gpu",
+      "--disable-dev-shm-usage",
+      "--no-first-run",
+      "--no-default-browser-check",
+      "--disable-background-networking",
+      `--remote-debugging-port=${cdpPort}`,
+      "--remote-debugging-address=127.0.0.1",
+      `--user-data-dir=${chromeProfile}`,
+      "--window-size=1440,900",
+      "about:blank",
+    ],
+    { detached: true, stdio: ["ignore", chromeFd, chromeFd] }
+  );
+  const chromePid = chrome.pid;
+  chrome.unref();
+  fs.closeSync(chromeFd);
+
+  try {
+    await waitHttpOk(`http://127.0.0.1:${cdpPort}/json/version`, 30000);
+  } catch (err) {
+    tryKill(pid, `--port ${port}`);
+    tryKill(chromePid, chromeProfile);
+    throw new Error(`Chrome CDP did not come up on ${cdpPort}: ${err.message}`);
+  }
+
+  const state = {
+    runId,
+    repo,
+    port,
+    url,
+    pid,
+    pgid: pid,
+    chromePid,
+    cdpPort,
+    cdp: `http://127.0.0.1:${cdpPort}`,
+    chromeUserData: chromeProfile,
+    logPath,
+    chromeLog,
+    runDir,
+    startedAt: new Date().toISOString(),
+  };
+  writeState(state);
+  process.stdout.write(JSON.stringify({ ok: true, ...state }, null, 2) + "\n");
+}
+
+async function doctor() {
+  const state = loadState();
+  const report = {
+    ok: true,
+    runId: state.runId,
+    url: state.url,
+    port: state.port,
+    pid: state.pid,
+    chromePid: state.chromePid,
+    checks: [],
+  };
+  const check = (name, pass, detail) => {
+    report.checks.push({ name, pass, detail });
+    if (!pass) report.ok = false;
+  };
+
+  check("state-file", true, statePath());
+  check("next-pid-alive", pidAlive(state.pid), `pid ${state.pid}`);
+  check(
+    "next-cmdline-owns-port",
+    cmdlineHas(state.pid, `--port ${state.port}`),
+    pidAlive(state.pid) ? readCmdline(state.pid) : "dead"
+  );
+  check("chrome-pid-alive", pidAlive(state.chromePid), `pid ${state.chromePid}`);
+  check(
+    "chrome-cmdline-owns-profile",
+    cmdlineHas(state.chromePid, state.chromeUserData),
+    pidAlive(state.chromePid) ? readCmdline(state.chromePid) : "dead"
+  );
+  check("not-shared-preview", !isForeignReserved(state.port), `port ${state.port}`);
+
+  let home = { status: 0, title: "", hasBio: false, error: "" };
+  try {
+    home = await fetchHome(state.url);
+  } catch (err) {
+    home.error = err.message;
+  }
+  check("http-200", home.status === 200, `status ${home.status}${home.error ? " " + home.error : ""}`);
+  check("title-ulysse-h", home.title === "Ulysse H", `title ${JSON.stringify(home.title)}`);
+  check("has-uh-bio", home.hasBio, "id=uh-bio");
+
+  let portfolio = 0;
+  try {
+    portfolio = await httpStatus(`${state.url}/portfolio.html`);
+  } catch (err) {
+    portfolio = -1;
+    check("portfolio-http", false, err.message);
+  }
+  if (portfolio !== -1) check("portfolio-http", portfolio === 200, `status ${portfolio}`);
+
+  let cdpOk = false;
+  try {
+    const ver = await httpGet(`${state.cdp}/json/version`);
+    cdpOk = ver.status === 200 && /Chrome|Chromium/i.test(ver.body);
+    check("chrome-cdp", cdpOk, `status ${ver.status}`);
+  } catch (err) {
+    check("chrome-cdp", false, err.message);
+  }
+
+  process.stdout.write(JSON.stringify(report, null, 2) + "\n");
+  if (!report.ok) process.exit(1);
+}
+
+async function cleanup() {
+  const state = loadStateOptional();
+  if (!state) {
+    process.stdout.write(JSON.stringify({ ok: true, skipped: "no state file" }) + "\n");
+    return;
+  }
+  const killed = [];
+  if (state.chromePid && pidAlive(state.chromePid)) {
+    if (!cmdlineHas(state.chromePid, state.chromeUserData)) {
+      throw new Error(
+        `refusing to kill chrome pid ${state.chromePid}: cmdline does not contain this run's user-data-dir`
+      );
+    }
+    await terminate(state.chromePid);
+    killed.push({ kind: "chrome", pid: state.chromePid });
+  }
+  if (state.pid && pidAlive(state.pid)) {
+    if (!cmdlineHas(state.pid, `--port ${state.port}`)) {
+      throw new Error(`refusing to kill next pid ${state.pid}: cmdline does not contain --port ${state.port}`);
+    }
+    await terminateGroup(state.pgid || state.pid, `--port ${state.port}`);
+    killed.push({ kind: "next", pid: state.pid, pgid: state.pgid });
+  }
+  const runDir = state.runDir;
+  if (runDir && runDir.startsWith(path.join(os.tmpdir(), "ulysse-verify-"))) {
+    fs.rmSync(runDir, { recursive: true, force: true });
+  }
+  const sp = statePath();
+  if (fs.existsSync(sp) && !sp.startsWith(path.join(os.tmpdir(), "ulysse-verify-"))) {
+    fs.rmSync(sp, { force: true });
+  }
+  process.stdout.write(
+    JSON.stringify(
+      {
+        ok: true,
+        killed,
+        removedScratch: runDir,
+        evidencePreserved: true,
+        note: "Evidence directories are never deleted by cleanup.",
+      },
+      null,
+      2
+    ) + "\n"
+  );
+}
+
+async function browserCmd(action, bflags) {
+  const state = loadState();
+  await withPage(state, bflags, async (page, root) => {
+    if (action === "goto") {
+      const target = new URL(bflags.path || "/", state.url).toString();
+      await page.goto(target, { waitUntil: "domcontentloaded", timeout: 30000 });
+      await page.waitForSelector("#uh-bio, main.shell, h1", { timeout: 15000 });
+      process.stdout.write(JSON.stringify({ ok: true, url: page.url() }) + "\n");
+      return;
+    }
+    if (action === "click") {
+      if (!bflags.selector) throw new Error("browser click requires --selector");
+      await root.locator(bflags.selector).first().click({ timeout: 10000 });
+      process.stdout.write(JSON.stringify({ ok: true, clicked: bflags.selector }) + "\n");
+      return;
+    }
+    if (action === "wait") {
+      if (!bflags.selector) throw new Error("browser wait requires --selector");
+      await root.locator(bflags.selector).first().waitFor({ state: "visible", timeout: 15000 });
+      process.stdout.write(JSON.stringify({ ok: true, visible: bflags.selector }) + "\n");
+      return;
+    }
+    if (action === "viewport") {
+      const width = Number(bflags.width || 1440);
+      const height = Number(bflags.height || 900);
+      await page.setViewportSize({ width, height });
+      process.stdout.write(JSON.stringify({ ok: true, width, height }) + "\n");
+      return;
+    }
+    if (action === "screenshot") {
+      if (!bflags.path) throw new Error("browser screenshot requires --path");
+      const dest = path.resolve(bflags.path);
+      fs.mkdirSync(path.dirname(dest), { recursive: true });
+      if (bflags.selector) {
+        await root.locator(bflags.selector).first().screenshot({ path: dest });
+      } else {
+        await page.screenshot({ path: dest, fullPage: Boolean(bflags["full-page"]) });
+      }
+      const st = fs.statSync(dest);
+      if (st.size < 800) throw new Error(`screenshot too small: ${dest} (${st.size} bytes)`);
+      process.stdout.write(JSON.stringify({ ok: true, path: dest, bytes: st.size }) + "\n");
+      return;
+    }
+    if (action === "dump") {
+      if (!bflags.path) throw new Error("browser dump requires --path");
+      const dest = path.resolve(bflags.path);
+      fs.mkdirSync(path.dirname(dest), { recursive: true });
+      const facts = await pageFacts(page);
+      fs.writeFileSync(dest, JSON.stringify(facts, null, 2));
+      const ariaPath = dest.replace(/\.json$/i, "") + ".txt";
+      fs.writeFileSync(ariaPath, facts.textDump);
+      process.stdout.write(JSON.stringify({ ok: true, path: dest, text: ariaPath }) + "\n");
+      return;
+    }
+    if (action === "eval") {
+      if (!bflags.js) throw new Error("browser eval requires --js");
+      const result = await page.evaluate((code) => eval(code), bflags.js);
+      process.stdout.write(JSON.stringify({ ok: true, result }, null, 2) + "\n");
+      return;
+    }
+    throw new Error(`unknown browser action: ${action}`);
+  });
+}
+
+async function drive() {
+  const feature = flags.feature;
+  if (!feature) throw new Error("drive requires --feature");
+  const state = loadState();
+  const evidenceDir = evidenceRoot(feature);
+  fs.mkdirSync(evidenceDir, { recursive: true });
+  const result = {
+    feature,
+    url: state.url,
+    runId: state.runId,
+    startedAt: new Date().toISOString(),
+    ok: true,
+    checks: [],
+    artifacts: [],
+  };
+  const note = (name, pass, detail) => {
+    result.checks.push({ name, pass, detail });
+    if (!pass) result.ok = false;
+  };
+
+  try {
+    if (feature === "bio-map-chips") await driveBio(state, evidenceDir, result, note);
+    else if (feature === "home-carbon-copy") await driveHome(state, evidenceDir, result, note);
+    else if (feature === "face-iframe") await driveFace(state, evidenceDir, result, note);
+    else if (feature === "user-research-tabs") await driveTabs(state, evidenceDir, result, note);
+    else throw new Error(`unknown feature ${feature}`);
+  } catch (err) {
+    result.ok = false;
+    result.error = String(err && err.message ? err.message : err);
+    result.stack = err && err.stack;
+  }
+  result.finishedAt = new Date().toISOString();
+  const resultPath = path.join(evidenceDir, "RESULT.json");
+  fs.writeFileSync(resultPath, JSON.stringify(result, null, 2));
+  result.artifacts.push(resultPath);
+  process.stdout.write(JSON.stringify(result, null, 2) + "\n");
+  if (!result.ok) process.exit(1);
+}
+
+async function driveHome(state, evidenceDir, result, note) {
+  await withPage(state, {}, async (page) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto(state.url + "/", { waitUntil: "domcontentloaded", timeout: 30000 });
+    await page.waitForSelector("#uh-bio", { timeout: 15000 });
+    await page.waitForTimeout(400);
+    const facts = await pageFacts(page);
+    writeJson(path.join(evidenceDir, "home-dump.json"), facts);
+    result.artifacts.push(path.join(evidenceDir, "home-dump.json"));
+    await shot(page, path.join(evidenceDir, "home-hero.png"), null);
+    result.artifacts.push(path.join(evidenceDir, "home-hero.png"));
+    await page.locator("#uh-bio").scrollIntoViewIfNeeded();
+    await shot(page, path.join(evidenceDir, "home-bio.png"), page.locator("#uh-bio"));
+    result.artifacts.push(path.join(evidenceDir, "home-bio.png"));
+
+    note("title", facts.title === "Ulysse H", facts.title);
+    note("hero", /The Go-Between/.test(facts.hero), facts.hero);
+    note("bio-heading", facts.bioHeading === "Bio", facts.bioHeading);
+    note("past-projects", facts.pastProjects === "Past Projects", facts.pastProjects);
+    note("rewrite-serves-site", facts.hasUhBio, "GET / contains #uh-bio from site.html");
+    note("webflow-badge-hidden", !facts.webflowBadgeVisible && !facts.madeInWebflowVisible, JSON.stringify({
+      badgeVisible: facts.webflowBadgeVisible,
+      madeInWebflow: facts.madeInWebflowVisible,
+      wfDomain: facts.wfDomain,
+    }));
+    note("face-iframe", facts.faceSrc.endsWith("/portfolio.html") && facts.faceAfterPastProjects, facts.faceSrc);
+  });
+}
+
+async function driveBio(state, evidenceDir, result, note) {
+  const places = (flags.places ? String(flags.places).split(",") : PLACE_ORDER).map((p) => p.trim()).filter(Boolean);
+  for (const p of places) {
+    if (!PLACES[p]) throw new Error(`unknown place ${p}`);
+  }
+  const doLightbox = flags.lightbox !== false && flags["no-lightbox"] !== true;
+  const doMobile = flags.mobile !== false && flags["no-mobile"] !== true;
+
+  await withPage(state, {}, async (page) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto(state.url + "/", { waitUntil: "domcontentloaded", timeout: 30000 });
+    await page.waitForSelector("#uh-bio", { timeout: 15000 });
+    await page.locator("#uh-bio").scrollIntoViewIfNeeded();
+    await page.waitForTimeout(400);
+
+    let facts = await pageFacts(page);
+    writeJson(path.join(evidenceDir, "bio-closed-dump.json"), facts);
+    result.artifacts.push(path.join(evidenceDir, "bio-closed-dump.json"));
+    await shot(page, path.join(evidenceDir, "bio-chips-closed.png"), page.locator("#uh-bio"));
+    result.artifacts.push(path.join(evidenceDir, "bio-chips-closed.png"));
+
+    note("no-gantt", facts.ganttCount === 0 && facts.laneCount === 0, `gantt=${facts.ganttCount} lanes=${facts.laneCount}`);
+    note("no-made-in-webflow", !facts.webflowBadgeVisible && !facts.madeInWebflowVisible, JSON.stringify({
+      badgeVisible: facts.webflowBadgeVisible,
+      madeInWebflow: facts.madeInWebflowVisible,
+      badgeInDom: facts.webflowBadgeInDom,
+    }));
+    note("view-full-timeline", facts.lightboxText.includes("View full timeline"), facts.lightboxText);
+    note("four-chips", facts.chipLabels.join("|") === "Copenhagen|London|Paris|Hong Kong", facts.chipLabels.join(", "));
+
+    for (const place of places) {
+      const spec = PLACES[place];
+      await page.locator(`.uh-bio-chip[data-place="${place}"]`).click();
+      await page.waitForTimeout(250);
+      const box = page.locator(`.uh-bio-box[data-place="${place}"]`);
+      const opened = await box.evaluate((el) => el.open);
+      note(`${place}-opens`, opened, `details.open=${opened}`);
+      const text = (await box.innerText()).replace(/\s+/g, " ").trim();
+      for (const s of spec.strings) {
+        note(`${place}-has-${s}`, text.includes(s), text);
+      }
+      for (const bad of BOX_FORBIDDEN) {
+        note(`${place}-no-${bad}`, !text.includes(bad), text);
+      }
+      const exclusive = await page.evaluate((id) => {
+        return [...document.querySelectorAll(".uh-bio-box")].every((d) => d.open === (d.getAttribute("data-place") === id));
+      }, place);
+      note(`${place}-exclusive`, exclusive, "only this details[open]");
+      const expanded = await page.locator(`.uh-bio-chip[data-place="${place}"]`).getAttribute("aria-expanded");
+      note(`${place}-aria-expanded`, expanded === "true", expanded);
+
+      facts = await pageFacts(page);
+      writeJson(path.join(evidenceDir, `bio-${place}-dump.json`), facts);
+      result.artifacts.push(path.join(evidenceDir, `bio-${place}-dump.json`));
+      await shot(page, path.join(evidenceDir, `bio-${place}-open.png`), page.locator("#uh-bio"));
+      result.artifacts.push(path.join(evidenceDir, `bio-${place}-open.png`));
+    }
+
+    if (doLightbox) {
+      await page.locator("a.uh-bio-lightbox").click();
+      await page.waitForTimeout(600);
+      const lightbox = page.locator(".w-lightbox-backdrop, .w-lightbox-container, .w-lightbox-view");
+      const count = await lightbox.count();
+      const visible = count > 0 && (await lightbox.first().isVisible().catch(() => false));
+      note("lightbox-opens", visible, `nodes=${count} visible=${visible}`);
+      if (visible) {
+        const src = await page.evaluate(() => {
+          const img = document.querySelector(".w-lightbox-image, .w-lightbox-img, .w-lightbox-view img");
+          return img ? img.getAttribute("src") || img.src : "";
+        });
+        note("lightbox-timeline-jpg", /Timeline\.jpg/i.test(src), src);
+        await shot(page, path.join(evidenceDir, "bio-lightbox.png"), null);
+        result.artifacts.push(path.join(evidenceDir, "bio-lightbox.png"));
+        const close = page.locator(".w-lightbox-close, .w-lightbox-backdrop");
+        if (await close.count()) await close.first().click({ force: true }).catch(() => {});
+        await page.keyboard.press("Escape").catch(() => {});
+        await page.waitForTimeout(200);
+      }
+    }
+
+    if (doMobile) {
+      await page.setViewportSize({ width: 390, height: 844 });
+      await page.locator("#uh-bio").scrollIntoViewIfNeeded();
+      await page.waitForTimeout(300);
+      await page.locator('.uh-bio-chip[data-place="hong-kong"]').click();
+      await page.waitForTimeout(250);
+      const mobileOpen = await page.locator('.uh-bio-box[data-place="hong-kong"]').evaluate((el) => el.open);
+      note("mobile-hong-kong-opens", mobileOpen, `open=${mobileOpen}`);
+      const chipBox = await page.locator('.uh-bio-chip[data-place="hong-kong"]').boundingBox();
+      note("mobile-chip-sized", !!(chipBox && chipBox.width > 20 && chipBox.height >= 20), JSON.stringify(chipBox));
+      await shot(page, path.join(evidenceDir, "bio-mobile-hong-kong.png"), page.locator("#uh-bio"));
+      result.artifacts.push(path.join(evidenceDir, "bio-mobile-hong-kong.png"));
+      facts = await pageFacts(page);
+      writeJson(path.join(evidenceDir, "bio-mobile-dump.json"), facts);
+      result.artifacts.push(path.join(evidenceDir, "bio-mobile-dump.json"));
+    }
+  });
+}
+
+async function driveFace(state, evidenceDir, result, note) {
+  await withPage(state, {}, async (page) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto(state.url + "/", { waitUntil: "domcontentloaded", timeout: 30000 });
+    await page.waitForSelector("#uh-face-portfolio", { timeout: 15000 });
+    const frame = page.frameLocator("#uh-face-portfolio");
+    await frame.locator("main.shell").waitFor({ timeout: 15000 });
+    await page.locator("#uh-face-portfolio").scrollIntoViewIfNeeded();
+    await page.waitForTimeout(800);
+
+    const facts = await pageFacts(page);
+    writeJson(path.join(evidenceDir, "face-dump.json"), facts);
+    result.artifacts.push(path.join(evidenceDir, "face-dump.json"));
+    note("iframe-src", facts.faceSrc.endsWith("/portfolio.html"), facts.faceSrc);
+    note("iframe-after-past-projects", facts.faceAfterPastProjects, JSON.stringify(facts.orderAroundFace));
+    note("iframe-before-user-research", facts.faceBeforeUserResearch, JSON.stringify(facts.orderAroundFace));
+    note("specimens-7", facts.specimenIds.length === 7, facts.specimenIds.join(", "));
+    note("specimen-01-open", facts.firstDemoOpen === true, String(facts.firstDemoOpen));
+    note("iframe-height", facts.faceHeight > 200, `height=${facts.faceHeight}`);
+
+    await shot(page, path.join(evidenceDir, "face-under-past-projects.png"), null);
+    result.artifacts.push(path.join(evidenceDir, "face-under-past-projects.png"));
+    await shot(page, path.join(evidenceDir, "face-specimen-01.png"), page.locator("#uh-face-portfolio"));
+    result.artifacts.push(path.join(evidenceDir, "face-specimen-01.png"));
+
+    await page.goto(state.url + "/portfolio.html", { waitUntil: "domcontentloaded", timeout: 30000 });
+    await page.waitForSelector("#specimen-01", { timeout: 10000 });
+    const title = await page.title();
+    note("direct-portfolio", /Portfolio/i.test(title), title);
+    await shot(page, path.join(evidenceDir, "portfolio-direct.png"), null);
+    result.artifacts.push(path.join(evidenceDir, "portfolio-direct.png"));
+  });
+}
+
+async function driveTabs(state, evidenceDir, result, note) {
+  const tabs = [
+    { id: "CS Marketplace", label: "Sales Tool (SFA)", expect: "UX Researcher @ Carlsberg Group Digital Studio" },
+    { id: "Cadi", label: "B2B Marketplace", expect: "B2B e-com" },
+    { id: "Journey Mapping", label: "Global Customer Journey", expect: "Data integration project manager" },
+    { id: "UCL", label: "Graduate Research", expect: "User Researcher @ Carlsberg Group" },
+  ];
+  await withPage(state, {}, async (page) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto(state.url + "/", { waitUntil: "domcontentloaded", timeout: 30000 });
+    await page.locator("h1.heading-5").scrollIntoViewIfNeeded();
+    await page.waitForTimeout(400);
+    const current = await page.locator("a.w-tab-link.w--current").getAttribute("data-w-tab");
+    note("default-tab", current === "CS Marketplace", current);
+    await shot(page, path.join(evidenceDir, "uxr-default.png"), page.locator(".uxr-tabs"));
+    result.artifacts.push(path.join(evidenceDir, "uxr-default.png"));
+
+    for (const tab of tabs) {
+      await page.locator(`a.w-tab-link[data-w-tab="${tab.id}"]`).click();
+      await page.waitForTimeout(400);
+      const active = await page.locator(`a.w-tab-link[data-w-tab="${tab.id}"]`).evaluate((el) => el.classList.contains("w--current"));
+      const pane = page.locator(`.w-tab-pane[data-w-tab="${tab.id}"]`);
+      const paneActive = await pane.evaluate((el) => el.classList.contains("w--tab-active"));
+      const text = (await pane.innerText()).replace(/\s+/g, " ");
+      note(`tab-${tab.id}-current`, active && paneActive, `current=${active} pane=${paneActive}`);
+      note(`tab-${tab.id}-copy`, text.includes(tab.expect), text.slice(0, 180));
+      const slug = tab.id.toLowerCase().replace(/\s+/g, "-");
+      await shot(page, path.join(evidenceDir, `uxr-${slug}.png`), page.locator(".uxr-tabs"));
+      result.artifacts.push(path.join(evidenceDir, `uxr-${slug}.png`));
+    }
+    const facts = await pageFacts(page);
+    writeJson(path.join(evidenceDir, "uxr-dump.json"), facts);
+    result.artifacts.push(path.join(evidenceDir, "uxr-dump.json"));
+  });
+}
+
+async function withPage(state, bflags, fn) {
+  const { chromium } = loadPlaywright();
+  const browser = await chromium.connectOverCDP(state.cdp);
+  try {
+    const context = browser.contexts()[0] || (await browser.newContext());
+    const page = context.pages()[0] || (await context.newPage());
+    const root = bflags.frame ? page.frameLocator(bflags.frame) : page;
+    await fn(page, root);
+  } finally {
+    // Disconnect only. browser.close() on a CDP session can kill the Chrome
+    // this run started, which would break later doctor/drive/cleanup steps.
+  }
+}
+
+async function pageFacts(page) {
+  const faceFrame = page.frames().find((f) => /portfolio\.html/.test(f.url()));
+  const facts = await page.evaluate(() => {
+    const text = (el) => (el ? (el.innerText || "").replace(/\s+/g, " ").trim() : "");
+    const visible = (el) => {
+      if (!el) return false;
+      const st = window.getComputedStyle(el);
+      if (st.display === "none" || st.visibility === "hidden" || Number(st.opacity) === 0) return false;
+      const r = el.getBoundingClientRect();
+      return r.width > 1 && r.height > 1;
+    };
+    const badge = document.querySelector(".w-webflow-badge");
+    const bio = document.getElementById("uh-bio");
+    const chips = [...document.querySelectorAll(".uh-bio-chip")].map((el) => ({
+      place: el.getAttribute("data-place"),
+      label: text(el.querySelector(".uh-bio-city")),
+      expanded: el.getAttribute("aria-expanded"),
+      active: el.classList.contains("is-active"),
+      visible: visible(el),
+    }));
+    const boxes = [...document.querySelectorAll(".uh-bio-box")].map((el) => ({
+      place: el.getAttribute("data-place"),
+      open: el.open,
+      text: text(el),
+      visible: visible(el),
+    }));
+    const face = document.getElementById("uh-face-portfolio");
+    const past = document.querySelector("h1.heading-6");
+    const uxr = document.querySelector("h1.heading-5");
+    const orderAroundFace = {
+      pastNext: past && past.parentElement ? past.parentElement.nextElementSibling && past.parentElement.nextElementSibling.id : null,
+      facePrev: face && face.previousElementSibling ? text(face.previousElementSibling).slice(0, 80) : null,
+      faceNext: face && face.nextElementSibling ? text(face.nextElementSibling).slice(0, 80) : face && face.nextElementSibling && face.nextElementSibling.tagName,
+    };
+    return {
+      title: document.title,
+      url: location.href,
+      hero: text(document.querySelector("h1.heading-8")),
+      bioHeading: text(document.querySelector("h1.body")),
+      pastProjects: text(document.querySelector("h1.heading-6")),
+      userResearch: text(document.querySelector("h1.heading-5")),
+      hasUhBio: !!bio,
+      chipLabels: chips.map((c) => c.label),
+      chips,
+      boxes,
+      lightboxText: text(document.querySelector("a.uh-bio-lightbox")),
+      ganttCount: document.querySelectorAll(".uh-bio-gantt").length,
+      laneCount: document.querySelectorAll(".uh-bio-lane").length,
+      webflowBadgeInDom: !!badge,
+      webflowBadgeVisible: visible(badge),
+      madeInWebflowVisible: /Made in Webflow/i.test(document.body.innerText || ""),
+      wfDomain: document.documentElement.getAttribute("data-wf-domain"),
+      faceSrc: face ? face.getAttribute("src") : "",
+      faceTitle: face ? face.getAttribute("title") : "",
+      faceHeight: face ? parseInt(face.style.height || "0", 10) : 0,
+      faceAfterPastProjects: !!(face && past && (face.compareDocumentPosition(past) & Node.DOCUMENT_POSITION_PRECEDING)),
+      faceBeforeUserResearch: !!(face && uxr && (face.compareDocumentPosition(uxr) & Node.DOCUMENT_POSITION_FOLLOWING)),
+      orderAroundFace,
+      currentTab: document.querySelector("a.w-tab-link.w--current") && document.querySelector("a.w-tab-link.w--current").getAttribute("data-w-tab"),
+    };
+  });
+
+  if (faceFrame) {
+    facts.specimenIds = await faceFrame.$$eval("article.project[id^='specimen-']", (els) => els.map((e) => e.id));
+    facts.firstDemoOpen = await faceFrame.$eval("article#specimen-01 details.specimen-demo", (el) => el.open).catch(() => null);
+    facts.faceFrameTitle = await faceFrame.title();
+  } else {
+    facts.specimenIds = [];
+    facts.firstDemoOpen = null;
+  }
+
+  const headings = await page.locator("h1").allInnerTexts();
+  facts.headings = headings.map((t) => t.replace(/\s+/g, " ").trim());
+  facts.textDump = [
+    `TITLE ${facts.title}`,
+    `URL ${facts.url}`,
+    `HERO ${facts.hero}`,
+    `BIO ${facts.bioHeading}`,
+    `PAST ${facts.pastProjects}`,
+    `UXR ${facts.userResearch}`,
+    `CHIPS ${facts.chipLabels.join(", ")}`,
+    `BOXES ${facts.boxes.map((b) => `${b.place}:${b.open ? "open" : "closed"}`).join(" ")}`,
+    `LIGHTBOX ${facts.lightboxText}`,
+    `GANTT ${facts.ganttCount} LANES ${facts.laneCount}`,
+    `BADGE visible=${facts.webflowBadgeVisible} inDom=${facts.webflowBadgeInDom} wfDomain=${facts.wfDomain}`,
+    `FACE src=${facts.faceSrc} height=${facts.faceHeight}`,
+    `SPECIMENS ${(facts.specimenIds || []).join(",")}`,
+    `TAB ${facts.currentTab}`,
+  ].join("\n");
+  return facts;
+}
+
+function loadPlaywright() {
+  ensurePlaywright();
+  const req = createRequire(path.join(HELPERS_DIR, "package.json"));
+  return req("playwright-core");
+}
+
+function ensurePlaywright() {
+  const pkg = path.join(HELPERS_DIR, "node_modules", "playwright-core", "package.json");
+  if (fs.existsSync(pkg)) return;
+  const r = spawnSync("npm", ["install", "--omit=dev"], {
+    cwd: HELPERS_DIR,
+    stdio: "inherit",
+    env: process.env,
+  });
+  if (r.status !== 0) throw new Error("npm install in helpers/ failed; playwright-core is required for the browser harness");
+}
+
+function ensureAppInstalled(repo) {
+  if (fs.existsSync(path.join(repo, "node_modules", "next"))) return;
+  const r = spawnSync("npm", ["install"], { cwd: repo, stdio: "inherit" });
+  if (r.status !== 0) throw new Error("npm install in the repo failed");
+}
+
+function repoRoot() {
+  const fromEnv = process.env.ULYSSE_VERIFY_REPO;
+  if (fromEnv && fs.existsSync(path.join(fromEnv, "package.json"))) return fromEnv;
+  if (DEFAULT_REPO) return DEFAULT_REPO;
+  throw new Error("cannot find ulysse-site repo (looked for package.json name ulysse-site)");
+}
+
+function findRepo(start) {
+  let dir = start;
+  for (let i = 0; i < 8; i++) {
+    const pkg = path.join(dir, "package.json");
+    if (fs.existsSync(pkg)) {
+      try {
+        const j = JSON.parse(fs.readFileSync(pkg, "utf8"));
+        if (j.name === "ulysse-site") return dir;
+      } catch {
+        /* continue */
+      }
+    }
+    const parent = path.dirname(dir);
+    if (parent === dir) break;
+    dir = parent;
+  }
+  return null;
+}
+
+function runDirFor(runId) {
+  if (process.env.ULYSSE_VERIFY_DIR) return process.env.ULYSSE_VERIFY_DIR;
+  return path.join(os.tmpdir(), `ulysse-verify-${runId}`);
+}
+
+function statePath() {
+  if (process.env.ULYSSE_VERIFY_STATE) return process.env.ULYSSE_VERIFY_STATE;
+  const runId = process.env.ULYSSE_VERIFY_RUN || flags["run-id"];
+  if (runId) return path.join(runDirFor(runId), "state.json");
+  const envRun = process.env.ULYSSE_VERIFY_DIR;
+  if (envRun) return path.join(envRun, "state.json");
+  const newest = newestState();
+  if (newest) return newest;
+  return path.join(os.tmpdir(), "ulysse-verify-default", "state.json");
+}
+
+function newestState() {
+  const tmp = os.tmpdir();
+  let names = [];
+  try {
+    names = fs.readdirSync(tmp).filter((n) => n.startsWith("ulysse-verify-"));
+  } catch {
+    return null;
+  }
+  let best = null;
+  let bestM = 0;
+  for (const n of names) {
+    const p = path.join(tmp, n, "state.json");
+    if (!fs.existsSync(p)) continue;
+    const m = fs.statSync(p).mtimeMs;
+    if (m > bestM) {
+      best = p;
+      bestM = m;
+    }
+  }
+  return best;
+}
+
+function writeState(state) {
+  const sp = path.join(state.runDir, "state.json");
+  fs.writeFileSync(sp, JSON.stringify(state, null, 2));
+  process.env.ULYSSE_VERIFY_RUN = state.runId;
+  process.env.ULYSSE_VERIFY_STATE = sp;
+}
+
+function loadState() {
+  const sp = statePath();
+  if (!fs.existsSync(sp)) throw new Error(`no verification instance state at ${sp}; run control-ulysse launch`);
+  return JSON.parse(fs.readFileSync(sp, "utf8"));
+}
+
+function loadStateOptional() {
+  const sp = statePath();
+  if (!fs.existsSync(sp)) {
+    const newest = newestState();
+    if (!newest) return null;
+    return JSON.parse(fs.readFileSync(newest, "utf8"));
+  }
+  return JSON.parse(fs.readFileSync(sp, "utf8"));
+}
+
+function evidenceRoot(feature) {
+  const base =
+    flags.evidence ||
+    process.env.ULYSSE_VERIFY_EVIDENCE ||
+    path.join(SKILL_DIR, "artifacts", process.env.ULYSSE_VERIFY_RUN || "local");
+  return path.resolve(base, feature);
+}
+
+function parseFlags(list) {
+  const out = {};
+  for (let i = 0; i < list.length; i++) {
+    const a = list[i];
+    if (!a.startsWith("--")) continue;
+    const key = a.slice(2);
+    const next = list[i + 1];
+    if (!next || next.startsWith("--")) out[key] = true;
+    else {
+      out[key] = next;
+      i++;
+    }
+  }
+  return out;
+}
+
+function pidAlive(pid) {
+  if (!pid) return false;
+  try {
+    process.kill(pid, 0);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function readCmdline(pid) {
+  try {
+    return fs.readFileSync(`/proc/${pid}/cmdline`, "utf8").replace(/\0/g, " ").trim();
+  } catch {
+    return "";
+  }
+}
+
+function cmdlineHas(pid, needle) {
+  return readCmdline(pid).includes(needle);
+}
+
+function thisRunOwnsReserved(port, existing) {
+  return existing && Number(existing.port) === Number(port) && pidAlive(existing.pid);
+}
+
+function isForeignReserved(port) {
+  if (!RESERVED_PORTS.has(Number(port))) return false;
+  return false;
+}
+
+function pickPort(start) {
+  let port = Number(start) || DEFAULT_PORT;
+  for (let i = 0; i < 40; i++) {
+    const candidate = port + i;
+    if (RESERVED_PORTS.has(candidate)) continue;
+    if (canListen(candidate)) return candidate;
+  }
+  throw new Error(`no free port near ${start}`);
+}
+
+function canListen(port) {
+  const r = spawnSync(
+    process.execPath,
+    [
+      "-e",
+      `const n=require("net");const s=n.createServer();s.once("error",()=>process.exit(1));s.listen(${Number(port)},"127.0.0.1",()=>s.close(()=>process.exit(0)));setTimeout(()=>process.exit(1),1000);`,
+    ],
+    { encoding: "utf8" }
+  );
+  return r.status === 0;
+}
+
+function tryKill(pid, needle) {
+  if (!pidAlive(pid)) return;
+  if (needle && !cmdlineHas(pid, needle)) return;
+  try {
+    process.kill(pid, "SIGTERM");
+  } catch {
+    /* ignore */
+  }
+}
+
+async function terminate(pid) {
+  if (!pidAlive(pid)) return;
+  try {
+    process.kill(pid, "SIGTERM");
+  } catch {
+    return;
+  }
+  for (let i = 0; i < 20; i++) {
+    if (!pidAlive(pid)) return;
+    await sleep(100);
+  }
+  try {
+    process.kill(pid, "SIGKILL");
+  } catch {
+    /* ignore */
+  }
+}
+
+async function terminateGroup(pgid, needle) {
+  if (pidAlive(pgid) && needle && !cmdlineHas(pgid, needle)) {
+    throw new Error(`refusing process group ${pgid}: cmdline mismatch`);
+  }
+  try {
+    process.kill(-pgid, "SIGTERM");
+  } catch {
+    await terminate(pgid);
+    return;
+  }
+  for (let i = 0; i < 20; i++) {
+    if (!pidAlive(pgid)) return;
+    await sleep(100);
+  }
+  try {
+    process.kill(-pgid, "SIGKILL");
+  } catch {
+    await terminate(pgid);
+  }
+}
+
+function httpGet(url) {
+  return new Promise((resolve, reject) => {
+    const req = http.get(url, { timeout: 4000 }, (res) => {
+      let body = "";
+      res.setEncoding("utf8");
+      res.on("data", (c) => {
+        if (body.length < 200000) body += c;
+      });
+      res.on("end", () => resolve({ status: res.statusCode, body }));
+    });
+    req.on("error", reject);
+    req.on("timeout", () => {
+      req.destroy();
+      reject(new Error("timeout " + url));
+    });
+  });
+}
+
+async function httpStatus(url) {
+  const r = await httpGet(url);
+  return r.status;
+}
+
+async function waitHttpOk(url, ms) {
+  const start = Date.now();
+  let last = "";
+  while (Date.now() - start < ms) {
+    try {
+      const r = await httpGet(url);
+      if (r.status === 200) return r;
+      last = `status ${r.status}`;
+    } catch (err) {
+      last = err.message;
+    }
+    await sleep(250);
+  }
+  throw new Error(`${url} not ready: ${last}`);
+}
+
+async function waitForSite(url, ms) {
+  const start = Date.now();
+  let last = "";
+  while (Date.now() - start < ms) {
+    try {
+      const home = await fetchHome(url);
+      if (home.status === 200 && home.hasBio) return home;
+      last = `status ${home.status} title=${home.title} bio=${home.hasBio}`;
+    } catch (err) {
+      last = err.message;
+    }
+    await sleep(300);
+  }
+  throw new Error(`site not ready at ${url}: ${last}`);
+}
+
+async function fetchHome(url) {
+  const r = await httpGet(url.endsWith("/") ? url : url + "/");
+  const titleMatch = r.body.match(/<title>([^<]*)<\/title>/i);
+  return {
+    status: r.status,
+    title: titleMatch ? titleMatch[1].trim() : "",
+    hasBio: /id=["']uh-bio["']/.test(r.body),
+  };
+}
+
+async function shot(page, dest, locator) {
+  fs.mkdirSync(path.dirname(dest), { recursive: true });
+  if (locator) await locator.screenshot({ path: dest });
+  else await page.screenshot({ path: dest, fullPage: false });
+  const st = fs.statSync(dest);
+  if (st.size < 800) throw new Error(`screenshot too small: ${dest} (${st.size})`);
+  return dest;
+}
+
+function writeJson(dest, obj) {
+  fs.mkdirSync(path.dirname(dest), { recursive: true });
+  fs.writeFileSync(dest, JSON.stringify(obj, null, 2));
+}
+
+function sleep(ms) {
+  return new Promise((r) => setTimeout(r, ms));
+}

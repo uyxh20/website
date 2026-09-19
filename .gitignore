@@ -42,3 +42,6 @@ next-env.d.ts
 
 # agent scratch
 /agent-tools
+
+# verification evidence (keep the skill; do not commit screenshots)
+.cursor/skills/verify-ulysse-site/artifacts/
