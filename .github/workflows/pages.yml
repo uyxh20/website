@@ -54,7 +54,7 @@ jobs:
             echo "ok=true" >> "${GITHUB_OUTPUT}"
           else
             echo "ok=false" >> "${GITHUB_OUTPUT}"
-            echo "Pages is not enabled. GITHUB_TOKEN cannot create a Pages site (needs repo admin). Leave the repo private. Enable in Settings → Pages → GitHub Actions, then re-run this workflow."
+            echo "Pages is not enabled. GITHUB_TOKEN cannot create a Pages site (needs repo admin). Repo should be public. Enable Settings → Pages → GitHub Actions, then re-run this workflow."
           fi
 
   deploy:
