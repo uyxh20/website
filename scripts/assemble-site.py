@@ -150,6 +150,13 @@ def fetch_live() -> str:
     return rewrite_html(html, mapping)
 
 
+def strip_webflow_badge(html: str) -> str:
+    html = html.replace("<!-- This site was created in Webflow. https://www.webflow.com -->", "")
+    html = html.replace(' data-wf-domain="ulysseh.webflow.io"', "")
+    html = html.replace('<meta content="Webflow" name="generator"/>', "")
+    return html
+
+
 def inject_face(html: str) -> str:
     html = FACE_BLOCK_RE.sub("\n", html)
     if PAST_PROJECTS_HEADING not in html:
@@ -187,7 +194,7 @@ def main() -> None:
     else:
         html = SITE.read_text()
 
-    html = inject_face(html)
+    html = strip_webflow_badge(inject_face(html))
     if not face_is_before_user_research(html):
         raise SystemExit("Face iframe is not under Past Projects / before User Research")
 
