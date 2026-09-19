@@ -38,7 +38,17 @@
       grid-template-columns:.18fr 1fr;
       gap:0 12px;
       text-decoration:none;
+      color:#030303;
+      cursor:pointer;
+      border:0;
+      border-bottom:0
+    }
+    .specimen-index a.is-selected{
       color:#030303
+    }
+    .specimen-index a.is-selected .specimen-index-num,
+    .specimen-index a.is-selected .specimen-index-title{
+      font-weight:500
     }
     .specimen-index-num{
       color:#767676;
@@ -46,21 +56,23 @@
       font-family:Roboto,sans-serif;
       font-size:16px;
       font-weight:400;
-      border-bottom:1px solid #767676;
-      margin:5px 0 10px;
-      padding-bottom:2px
+      border:0;
+      border-bottom:0;
+      margin:5px 0 4px;
+      padding-bottom:0
     }
     .specimen-index-title{
-      border-bottom:1px solid #767676;
-      margin:5px 0 10px;
-      padding-bottom:2px;
+      border:0;
+      border-bottom:0;
+      margin:5px 0 4px;
+      padding-bottom:0;
       font-weight:400
     }
     .projects{display:flex;flex-direction:column;gap:8px}
     .project{
       background:#ffffff;
       border:0;
-      border-top:1px solid #767676;
+      border-top:0;
       border-radius:0;
       box-shadow:none;
       display:flex;
@@ -640,6 +652,32 @@ async function copyText(text){var ok=false;try{if(navigator.clipboard&&navigator
 function exportRecord(download){var text=JSON.stringify(record(),null,2);if(download){var blob=new Blob([text],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='promotion_investment_planner_synthetic_proposal.json';document.body.appendChild(a);a.click();a.remove();setTimeout(function(){URL.revokeObjectURL(url)},500);status('Synthetic promotion proposal prepared for download.');return}copyText(text).then(ok=>status(ok?'Synthetic promotion proposal copied.':'Clipboard unavailable; use Download proposal JSON.'))}
 function bind(){document.querySelectorAll('[data-promo-step]').forEach(b=>b.onclick=()=>{var t=+b.dataset.promoStep;if(unlocked(t)){step=t;render(false)}});document.querySelectorAll('[data-promo-sku]').forEach(b=>b.onclick=()=>{sku=b.dataset.promoSku;channel='';objective='';mechanic='';modelRun=false;selected='';submitted=false;decision='';choose('data-promo-sku',sku)});document.querySelectorAll('[data-promo-channel]').forEach(b=>b.onclick=()=>{channel=b.dataset.promoChannel;mechanic='';modelRun=false;selected='';submitted=false;decision='';choose('data-promo-channel',channel)});document.querySelectorAll('[data-promo-objective]').forEach(b=>b.onclick=()=>{objective=b.dataset.promoObjective;mechanic='';modelRun=false;selected='';submitted=false;decision='';choose('data-promo-objective',objective)});document.querySelectorAll('[data-promo-mechanic]').forEach(b=>b.onclick=()=>{mechanic=b.dataset.promoMechanic;modelRun=false;selected='';submitted=false;decision='';choose('data-promo-mechanic',mechanic)});document.querySelectorAll('[data-promo-scenario]').forEach(b=>b.onclick=()=>{selected=b.dataset.promoScenario;submitted=false;decision='';choose('data-promo-scenario',selected)});document.querySelectorAll('[data-promo-decision]').forEach(b=>b.onclick=()=>{decision=b.dataset.promoDecision;render(true)});document.querySelectorAll('[data-promo-action]').forEach(b=>b.onclick=()=>{var a=b.dataset.promoAction;if(a==='model'){modelRun=true;render(true)}else if(a==='advance')next(true);else if(a==='submit'){submitted=true;render(true)}else if(a==='copy')exportRecord(false);else if(a==='download')exportRecord(true)})}
 q('promoxBack').onclick=()=>{if(step>0){step--;render(false)}};q('promoxNext').onclick=()=>next(true);render(false);
+})();
+</script>
+<script>
+(function () {
+  var nav = document.querySelector(".specimen-index");
+  if (!nav) return;
+  var links = nav.querySelectorAll("a[href^='#specimen-']");
+  var projects = document.querySelectorAll(".project[id^='specimen-']");
+  function show(id) {
+    projects.forEach(function (p) {
+      p.hidden = p.id !== id;
+    });
+    links.forEach(function (a) {
+      var on = a.getAttribute("href") === "#" + id;
+      a.classList.toggle("is-selected", on);
+      if (on) a.setAttribute("aria-current", "true");
+      else a.removeAttribute("aria-current");
+    });
+  }
+  nav.addEventListener("click", function (e) {
+    var a = e.target.closest("a[href^='#specimen-']");
+    if (!a || !nav.contains(a)) return;
+    e.preventDefault();
+    show(a.getAttribute("href").slice(1));
+  });
+  show("specimen-01");
 })();
 </script>
 </body>
