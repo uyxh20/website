@@ -2,7 +2,9 @@
 
 Four clickable layouts for the same Bio copy. Not on the live site. Not in `public/site.html`. Not the hanging-file Portfolio mock.
 
-Copy source: eight places from `docs/bio-map.md` (Paris, Hong Kong, Bath, Shanghai, Chengdu, Shenzhen, London, Copenhagen). No invented biography.
+GitHub PR (do not merge): https://github.com/uyxh20/website/pull/7
+
+Copy source: eight places from `docs/bio-map.md` (Paris, Hong Kong, Bath, Shanghai, Chengdu, Shenzhen, London, Copenhagen). No invented biography. Year spine (`/?v=1`) is the pick: flags, Hong Kong as four stations, years on the left rail only (no duplicate 2017 on the HK placement station; no `2011–2015 ·` prefixes in station lines).
 
 ## Run
 
