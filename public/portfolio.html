@@ -270,12 +270,45 @@
     .experience-window{border-radius:0;box-shadow:none;border-color:#767676}
     .mfg-state span.active{background:#ff6b6b;color:#fff}
 
+    /* Hanging-file cabinet: the existing specimens remain the folder contents. */
+    :root{--folder-ink:#24231f;--folder-paper:#f4efdf;--folder-soft:#fffdf5;--folder-line:#827b69;--folder-yellow:#f2c94c}
+    html,body{overflow-x:hidden;background:transparent}
+    body{font-family:Roboto,sans-serif;padding:28px 16px 44px}
+    .shell{max-width:940px;background:transparent;padding:0}
+    .portfolio-cabinet-head{display:flex;justify-content:space-between;align-items:flex-end;gap:24px;margin:0 2px 14px;color:#6d685c;font-size:12px}
+    .portfolio-cabinet-head p{margin:0}.portfolio-cabinet-head strong{color:var(--folder-ink);font-size:11px;letter-spacing:.1em;text-transform:uppercase}
+    .layout-switch{display:flex;align-items:center;gap:8px}.layout-switch span{font-size:10px;letter-spacing:.08em;text-transform:uppercase}
+    .layout-switch button{min-height:44px;border:1px solid var(--folder-line);background:var(--folder-soft);color:var(--folder-ink);padding:7px 12px;cursor:pointer}
+    .layout-switch button[aria-pressed="true"]{background:var(--folder-ink);color:var(--folder-paper)}
+    .layout-switch button:focus-visible,.folder-head:focus-visible{outline:3px solid var(--folder-yellow);outline-offset:3px}
+    .specimen-index{position:absolute!important;width:1px!important;height:1px!important;padding:0!important;margin:-1px!important;overflow:hidden!important;clip:rect(0,0,0,0)!important;white-space:nowrap!important;border:0!important}
+    .projects{gap:0;padding-top:5px}.project{position:relative;display:block;background:transparent;padding-top:30px;margin-top:-13px;overflow:visible}.project:first-child{margin-top:0}.project.is-open{z-index:20}.project.is-open+.project{margin-top:9px}
+    .folder-head{position:absolute;inset:0 0 auto;z-index:4;width:100%;min-height:44px;border:0;background:transparent;color:var(--folder-ink);padding:0;cursor:pointer;text-align:left}
+    .folder-tab{position:absolute;left:8px;top:0;display:flex;align-items:flex-end;max-width:calc(100% - 16px);height:31px;padding:0 18px 7px 15px;background:var(--folder-paper);border:1.5px solid var(--folder-ink);border-bottom:0;clip-path:polygon(11px 0,calc(100% - 11px) 0,100% 100%,0 100%);font-size:12px;line-height:1.1;white-space:nowrap}
+    .tabs-alt .project:nth-child(even) .folder-tab{left:auto;right:8px}.folder-tab-num{flex:none;margin-right:10px;letter-spacing:.08em}.folder-tab-title{min-width:0;overflow:hidden;text-overflow:ellipsis}
+    .folder-head:hover .folder-tab{background:#fffefa}.folder-head[aria-expanded="true"] .folder-tab{background:var(--folder-ink);color:var(--folder-paper)}
+    .folder-panel{position:relative;z-index:1;display:grid;grid-template-rows:0fr;background:var(--folder-paper);border:1.5px solid var(--folder-line);border-radius:9px 9px 3px 3px;box-shadow:0 1px 0 rgba(35,35,31,.1);transition:grid-template-rows .42s cubic-bezier(.22,1,.36,1)}
+    .project.is-open .folder-panel{grid-template-rows:1fr;box-shadow:0 7px 0 rgba(35,35,31,.07),0 16px 24px rgba(35,35,31,.09)}
+    .folder-panel-inner{min-width:0;min-height:0;overflow:hidden}.project.is-open .folder-panel-inner{padding:14px clamp(12px,3vw,28px) 24px}
+    .project-top{padding:8px 0 14px}.journey-feature .project-top{padding-bottom:14px}.project-title{align-items:flex-start}.project h3{font-size:clamp(20px,2.8vw,29px);font-weight:500;letter-spacing:-.025em;color:var(--folder-ink)}
+    .project-num{font-size:11px;letter-spacing:.08em;color:#6d685c}.status{font-size:11px;text-transform:none;border:1px solid rgba(36,35,31,.3);border-radius:999px;padding:5px 8px;color:var(--folder-ink)}.project-hook{max-width:72ch;color:#514d44}
+    .specimen-demo>summary{min-height:44px;display:flex;align-items:center;color:var(--folder-ink);border-color:var(--folder-line)}.details{padding-bottom:4px}.built li{color:var(--folder-ink)}
+    .portfolio-drawer{position:relative;height:74px;margin-top:-1px;background:var(--folder-yellow);border:1.5px solid var(--folder-ink);clip-path:polygon(6% 0,94% 0,100% 100%,0 100%);display:grid;place-items:center;z-index:0}
+    .portfolio-drawer strong{font-size:clamp(25px,5vw,45px);font-weight:500;letter-spacing:-.04em;color:var(--folder-ink)}
+    @media(max-width:620px){body{padding:20px 10px 32px}.portfolio-cabinet-head{align-items:flex-start;flex-direction:column;gap:10px}.portfolio-cabinet-note{display:none}.layout-switch{width:100%;justify-content:space-between}.layout-switch button{padding-inline:10px}.project{padding-top:31px}.folder-tab{max-width:calc(100% - 10px);left:5px;padding-inline:12px}.tabs-alt .project:nth-child(even) .folder-tab{right:5px}.folder-tab-title{font-size:11px}.project-title{display:block}.status{display:inline-block}.experience-experience{margin-inline:0}.experience-exp-head{padding:17px 14px}.experience-context{padding:16px 14px}.experience-body{padding:14px}.experience-footer{padding:12px 14px}.experience-windowbar{gap:8px;align-items:flex-start;flex-direction:column}.portfolio-drawer{height:62px}}
+    @media(max-width:350px){body{padding-inline:6px}.folder-tab-title{font-size:10px}.folder-tab-num{margin-right:7px}.project.is-open .folder-panel-inner{padding-inline:8px}.experience-screen{padding:6px}.experience-exp-head,.experience-context,.experience-body,.experience-footer{padding-inline:10px}.experience-btn{max-width:100%;white-space:normal}.portfolio-drawer{height:56px}}
+    @media(prefers-reduced-motion:reduce){.folder-panel{transition:none}}
+
 </style>
 </head>
 <body>
 <main class="shell">
   <section id="work">
-  <nav class="specimen-index" aria-label="Product specimens">
+  <header class="portfolio-cabinet-head">
+    <div><strong>Selected projects</strong><p class="portfolio-cabinet-note">Open a hanging file to explore the full project and product demo.</p></div>
+    <div class="layout-switch" role="group" aria-label="Folder tab layout"><span>Tabs</span><div><button type="button" data-layout="left" aria-pressed="true">Left</button><button type="button" data-layout="alt" aria-pressed="false">Alternating</button></div></div>
+  </header>
+  <nav class="specimen-index" aria-label="Product specimens" hidden>
       <a href="#specimen-01"><span class="specimen-index-num">01</span><span class="specimen-index-title">SKU Profitability and Complexity Optimisation Agent</span></a>
       <a href="#specimen-02"><span class="specimen-index-num">02</span><span class="specimen-index-title">Manufacturing Real-Time AI Assistant</span></a>
       <a href="#specimen-03"><span class="specimen-index-num">03</span><span class="specimen-index-title">C-Suite Financial Report Agent</span></a>
@@ -294,7 +327,7 @@
           <div class="experience-stage">
             <aside class="experience-context"><h5 id="experienceContextTitle">Meet the user</h5><p id="experienceContextText">A procurement manager is preparing tomorrow's portfolio workshop.</p><div class="experience-context-list"><div class="experience-context-item"><b>Human owns</b><span>Decision and local judgement</span></div><div class="experience-context-item"><b>Coach prepares</b><span>Evidence, options and handoffs</span></div><div class="experience-context-item"><b>Team surface</b><span>Collaboration workspace and alerts</span></div></div></aside>
             <div class="experience-screen"><div class="experience-window"><div class="experience-windowbar"><span>Portfolio Optimisation Agent · Team workspace</span><span class="experience-safe interactive">Interactive · click controls</span></div><div class="experience-body" id="experienceScene" aria-live="polite"></div></div></div>
-          </div>
+</div>
           <footer class="experience-footer"><span id="experienceBoundary" role="status" aria-live="polite">The Coach prepares the work. People still make the call.</span><div class="experience-nav"><button class="experience-btn" id="experienceBack">Back</button><button class="experience-btn primary" id="experienceNext">Next</button></div></footer>
         </section>
 </details>
@@ -396,7 +429,8 @@
   <div class="details"><ul class="built"><li>Built country comparison, readiness gates, evidence filters and a review queue.</li><li>Made the criticality, lifecycle and project-linkage rule inspectable.</li><li>Separated missing plan linkage from proof that mitigation is absent.</li><li>Added a filtered CSV handoff and a remediation-first path for unready data.</li></ul></div>
 </article>
 
-      </div>
+</div>
+<div class="portfolio-drawer" aria-hidden="true"><strong>Portfolio</strong></div>
   </section>
 
   
@@ -656,28 +690,87 @@ q('promoxBack').onclick=()=>{if(step>0){step--;render(false)}};q('promoxNext').o
 </script>
 <script>
 (function () {
-  var nav = document.querySelector(".specimen-index");
-  if (!nav) return;
-  var links = nav.querySelectorAll("a[href^='#specimen-']");
-  var projects = document.querySelectorAll(".project[id^='specimen-']");
-  function show(id) {
-    projects.forEach(function (p) {
-      p.hidden = p.id !== id;
-    });
-    links.forEach(function (a) {
-      var on = a.getAttribute("href") === "#" + id;
-      a.classList.toggle("is-selected", on);
-      if (on) a.setAttribute("aria-current", "true");
-      else a.removeAttribute("aria-current");
-    });
-  }
-  nav.addEventListener("click", function (e) {
-    var a = e.target.closest("a[href^='#specimen-']");
-    if (!a || !nav.contains(a)) return;
-    e.preventDefault();
-    show(a.getAttribute("href").slice(1));
+  var projects = Array.from(document.querySelectorAll(".project[id^='specimen-']"));
+  var stack = document.querySelector(".projects");
+  var layoutButtons = Array.from(document.querySelectorAll("[data-layout]"));
+  var valid = new Set(projects.map(function (project) { return project.id.slice(-2); }));
+
+  projects.forEach(function (project) {
+    var number = project.id.slice(-2);
+    var title = project.querySelector("h3").textContent;
+    var panelId = "folder-panel-" + number;
+    var buttonId = "folder-toggle-" + number;
+    var button = document.createElement("button");
+    button.type = "button";
+    button.className = "folder-head";
+    button.id = buttonId;
+    button.setAttribute("aria-controls", panelId);
+    button.innerHTML = '<span class="folder-tab"><span class="folder-tab-num">' + number + '</span><span class="folder-tab-title"></span></span>';
+    button.querySelector(".folder-tab-title").textContent = title;
+
+    var panel = document.createElement("div");
+    panel.className = "folder-panel";
+    panel.id = panelId;
+    panel.setAttribute("role", "region");
+    panel.setAttribute("aria-labelledby", buttonId);
+    var inner = document.createElement("div");
+    inner.className = "folder-panel-inner";
+    while (project.firstChild) inner.appendChild(project.firstChild);
+    panel.appendChild(inner);
+    project.appendChild(button);
+    project.appendChild(panel);
+    button.addEventListener("click", function () { setOpen(number, true, true); });
   });
-  show("specimen-01");
+
+  function queryOpen() {
+    var raw = new URLSearchParams(location.search).get("open") || location.hash.replace(/^#(?:specimen-)?/, "");
+    raw = (raw || "01").replace(/^specimen-/, "");
+    return valid.has(raw) ? raw : "01";
+  }
+
+  function setOpen(number, updateUrl, scroll) {
+    if (!valid.has(number)) number = "01";
+    projects.forEach(function (project) {
+      var open = project.id === "specimen-" + number;
+      project.classList.toggle("is-open", open);
+      var button = project.querySelector(".folder-head");
+      var panel = project.querySelector(".folder-panel");
+      button.setAttribute("aria-expanded", open ? "true" : "false");
+      panel.setAttribute("aria-hidden", open ? "false" : "true");
+      panel.inert = !open;
+    });
+    if (updateUrl) {
+      var url = new URL(location.href);
+      url.searchParams.set("open", number);
+      history.replaceState(null, "", url.pathname + url.search);
+      if (window.parent !== window) window.parent.postMessage({type:"portfolio-folder", id:"specimen-" + number}, location.origin);
+    }
+    if (scroll) {
+      var reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+      document.getElementById("specimen-" + number).scrollIntoView({block:"nearest", behavior:reduce ? "auto" : "smooth"});
+    }
+  }
+
+  function setLayout(layout, updateUrl) {
+    layout = layout === "alt" ? "alt" : "left";
+    stack.classList.toggle("tabs-alt", layout === "alt");
+    layoutButtons.forEach(function (button) { button.setAttribute("aria-pressed", button.dataset.layout === layout ? "true" : "false"); });
+    if (updateUrl) {
+      var url = new URL(location.href);
+      if (layout === "alt") url.searchParams.set("tabs", "alt"); else url.searchParams.delete("tabs");
+      history.replaceState(null, "", url.pathname + url.search);
+    }
+  }
+
+  layoutButtons.forEach(function (button) { button.addEventListener("click", function () { setLayout(button.dataset.layout, true); }); });
+  window.addEventListener("message", function (event) {
+    if (event.origin !== location.origin || !event.data || event.data.type !== "portfolio-open") return;
+    setOpen(String(event.data.id || "").replace(/^specimen-/, ""), true, true);
+  });
+  window.addEventListener("popstate", function () { setOpen(queryOpen(), false, false); });
+  window.addEventListener("hashchange", function () { setOpen(queryOpen(), false, true); });
+  setLayout(new URLSearchParams(location.search).get("tabs"), false);
+  setOpen(queryOpen(), false, false);
 })();
 </script>
 </body>
