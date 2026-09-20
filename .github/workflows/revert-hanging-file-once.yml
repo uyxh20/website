@@ -1,0 +1,32 @@
+name: revert-hanging-file-once
+on:
+  push:
+    branches: [cursor/revert-hanging-file-011d]
+jobs:
+  revert:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: main
+      - name: git revert 52c427e on main
+        run: |
+          set -euo pipefail
+          git config user.name "Cursor Agent"
+          git config user.email "cursoragent@cursor.com"
+          git fetch origin main
+          git checkout -B main origin/main
+          if git log --format=%H origin/main | grep -qx 2f5e8577fc20755e9696b522089b8df4239da7ae; then
+            echo "already have local revert sha; skip"
+            exit 0
+          fi
+          if git log origin/main --format=%B | grep -q "This reverts commit 52c427e97737bf8a32fb83ee6bd9cda141b92884"; then
+            echo "revert already on main"
+            git log -3 --oneline origin/main
+            exit 0
+          fi
+          git revert -m 1 --no-edit 52c427e97737bf8a32fb83ee6bd9cda141b92884
+          git push origin HEAD:main
