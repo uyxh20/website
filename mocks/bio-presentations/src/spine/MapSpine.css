@@ -1,0 +1,37 @@
+.map-station {
+  position: relative;
+  padding: 0 0 32px 8px;
+}
+
+.sv-group:last-child .map-station {
+  padding-bottom: 0;
+}
+
+.map-dot {
+  position: absolute;
+  left: -15px;
+  top: 10px;
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  background: var(--coral);
+  box-shadow: 0 0 0 3px #fff;
+}
+
+.map-station .sv-note {
+  margin-top: 12px;
+  max-width: 36ch;
+}
+
+@media (min-width: 800px) {
+  .map-station {
+    display: grid;
+    grid-template-columns: minmax(220px, 320px) 1fr;
+    gap: 16px 24px;
+    align-items: start;
+  }
+
+  .map-station .sv-note {
+    margin-top: 0;
+  }
+}

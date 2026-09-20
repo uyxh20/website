@@ -1,0 +1,102 @@
+.stamp-col {
+  padding-bottom: 32px;
+}
+
+.sv-group:last-child .stamp-col {
+  padding-bottom: 0;
+}
+
+.stamp-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px 16px;
+  padding: 0;
+}
+
+.sv-group:last-child .stamp-row {
+  padding-bottom: 0;
+}
+
+.stamp-card {
+  width: min(148px, 100%);
+  flex: 0 0 auto;
+}
+
+.stamp-row-many .stamp-card {
+  width: min(124px, calc(50% - 10px));
+}
+
+.stamp-card button {
+  position: relative;
+  display: block;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  border: 1px solid #030303;
+  background: #fff;
+  cursor: pointer;
+  color: inherit;
+  text-align: left;
+}
+
+.stamp-card img {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 1 / 1;
+  object-fit: cover;
+}
+
+.stamp-dot {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--coral);
+  box-shadow: 0 0 0 2px #fff;
+}
+
+.stamp-card.is-open button {
+  outline: 2px solid var(--coral);
+  outline-offset: 2px;
+}
+
+.stamp-card.is-open .stamp-dot {
+  box-shadow: 0 0 0 2px #fff, 0 0 0 4px #030303;
+}
+
+.stamp-cap {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 8px 8px 10px;
+}
+
+.stamp-cap b {
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.stamp-cap i {
+  font-style: normal;
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.35;
+}
+
+.stamp-card .sv-note {
+  width: min(320px, 70vw);
+  margin-top: 8px;
+}
+
+@media (min-width: 720px) {
+  .stamp-row-many .stamp-card {
+    width: 124px;
+  }
+
+  .stamp-card {
+    width: 148px;
+  }
+}
