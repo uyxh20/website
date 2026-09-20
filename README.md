@@ -4,11 +4,11 @@
 
 Carbon copy of [ulysseh.webflow.io](https://ulysseh.webflow.io/) with the Face product specimens on the same page, directly under **Portfolio**. The old Webflow case-study tabs (User Research, program management, comms, ops) are not on this page.
 
-Hero title is **In-Between**, subtitle **Where Human Digital Intersect**. Bio keeps the dotted map at about two-thirds of the column, centered. Eight coral circle chips (Paris, Hong Kong, Bath, Shanghai, Chengdu, Shenzhen, London, Copenhagen) open a small popover card beside the chip. On a phone the same card docks under the map. There is no Gantt JPEG and no View full timeline.
+Hero title is **In-Between**, subtitle **Where the Human and the Digital Intersect**. Bio is a flagged year spine: Hong Kong returns four times on the rail, years on the left, station lines without `2011–2015 ·` prefixes. There is no dotted map, no Gantt JPEG, and no View full timeline. Copy is sliced from the Bio notes only.
 
 Face page chrome uses the Webflow tokens (white, Roboto, 940px). The 01–07 index has no row underlines; clicking a row shows only that product (01 selected by default). Interactive demos stay nested inside each specimen. No extra site nav, chips, or copy rewrites.
 
-This repository is **public**. GitHub Pages: [https://uyxh20.github.io/website/](https://uyxh20.github.io/website/). The `Deploy GitHub Pages` workflow publishes `public/` on every push to `main` (`site.html` as `index.html`, plus `portfolio.html` and `webflow/` assets). Asset paths are relative so they work at `/` locally and at `/website/` on Pages.
+This repository is **public**. GitHub Pages: [https://uyxh20.github.io/website/](https://uyxh20.github.io/website/). The `Deploy GitHub Pages` workflow publishes `public/` on every push to `main` (`site.html` as `index.html`, plus `portfolio.html`, `flags/`, and `webflow/` assets). Asset paths are relative so they work at `/` locally and at `/website/` on Pages.
 
 ## Clone and run
 
