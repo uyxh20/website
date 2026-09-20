@@ -56,12 +56,7 @@ APPEND = """
       if (!doc) return;
       var shell = doc.querySelector("main.shell") || doc.body;
       if (!shell) return;
-      var height = Math.ceil(Math.max(
-        shell.offsetHeight,
-        shell.getBoundingClientRect().bottom,
-        doc.body ? doc.body.scrollHeight : 0,
-        doc.documentElement ? doc.documentElement.scrollHeight : 0
-      ));
+      var height = Math.ceil(Math.max(shell.offsetHeight, shell.getBoundingClientRect().height));
       if (height > 0 && String(height) !== String(parseInt(frame.style.height, 10))) {
         frame.style.height = height + "px";
       }
@@ -70,12 +65,10 @@ APPEND = """
   }
   frame.addEventListener("load", function () {
     fit();
-    [50, 250, 500, 800].forEach(function (ms) { setTimeout(fit, ms); });
+    [50, 250, 800].forEach(function (ms) { setTimeout(fit, ms); });
     try {
       var doc = frame.contentDocument || frame.contentWindow.document;
       if (!doc) return;
-      var requested = window.location.hash.match(/^#specimen-(0[1-7])$/);
-      if (requested) frame.contentWindow.postMessage({ type: "portfolio-open", id: requested[0].slice(1) }, window.location.origin);
       if (window.ResizeObserver) {
         var ro = new ResizeObserver(fit);
         var shell = doc.querySelector("main.shell");
@@ -86,22 +79,9 @@ APPEND = """
       doc.querySelectorAll("details").forEach(function (node) {
         node.addEventListener("toggle", fit);
       });
-      doc.addEventListener("click", function () {
-        [50, 250, 500].forEach(function (ms) { setTimeout(fit, ms); });
-      });
     } catch (e) {
       setInterval(fit, 1000);
     }
-  });
-  window.addEventListener("message", function (event) {
-    if (event.origin !== window.location.origin || event.source !== frame.contentWindow || !event.data || event.data.type !== "portfolio-folder") return;
-    if (!/^specimen-0[1-7]$/.test(event.data.id)) return;
-    history.replaceState(null, "", window.location.pathname + window.location.search + "#" + event.data.id);
-    [50, 250, 500].forEach(function (ms) { setTimeout(fit, ms); });
-  });
-  window.addEventListener("hashchange", function () {
-    var requested = window.location.hash.match(/^#specimen-(0[1-7])$/);
-    if (requested && frame.contentWindow) frame.contentWindow.postMessage({ type: "portfolio-open", id: requested[0].slice(1) }, window.location.origin);
   });
 })();
 </script>
