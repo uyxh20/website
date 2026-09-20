@@ -56,7 +56,12 @@ APPEND = """
       if (!doc) return;
       var shell = doc.querySelector("main.shell") || doc.body;
       if (!shell) return;
-      var height = Math.ceil(Math.max(shell.offsetHeight, shell.getBoundingClientRect().height));
+      var height = Math.ceil(Math.max(
+        shell.offsetHeight,
+        shell.getBoundingClientRect().bottom,
+        doc.body ? doc.body.scrollHeight : 0,
+        doc.documentElement ? doc.documentElement.scrollHeight : 0
+      ));
       if (height > 0 && String(height) !== String(parseInt(frame.style.height, 10))) {
         frame.style.height = height + "px";
       }
@@ -93,6 +98,10 @@ APPEND = """
     if (!/^specimen-0[1-7]$/.test(event.data.id)) return;
     history.replaceState(null, "", window.location.pathname + window.location.search + "#" + event.data.id);
     [50, 250, 500].forEach(function (ms) { setTimeout(fit, ms); });
+  });
+  window.addEventListener("hashchange", function () {
+    var requested = window.location.hash.match(/^#specimen-(0[1-7])$/);
+    if (requested && frame.contentWindow) frame.contentWindow.postMessage({ type: "portfolio-open", id: requested[0].slice(1) }, window.location.origin);
   });
 })();
 </script>

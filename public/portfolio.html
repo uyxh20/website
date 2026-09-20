@@ -308,7 +308,7 @@
     <div><strong>Selected projects</strong><p class="portfolio-cabinet-note">Open a hanging file to explore the full project and product demo.</p></div>
     <div class="layout-switch" role="group" aria-label="Folder tab layout"><span>Tabs</span><div><button type="button" data-layout="left" aria-pressed="true">Left</button><button type="button" data-layout="alt" aria-pressed="false">Alternating</button></div></div>
   </header>
-  <nav class="specimen-index" aria-label="Product specimens">
+  <nav class="specimen-index" aria-label="Product specimens" hidden>
       <a href="#specimen-01"><span class="specimen-index-num">01</span><span class="specimen-index-title">SKU Profitability and Complexity Optimisation Agent</span></a>
       <a href="#specimen-02"><span class="specimen-index-num">02</span><span class="specimen-index-title">Manufacturing Real-Time AI Assistant</span></a>
       <a href="#specimen-03"><span class="specimen-index-num">03</span><span class="specimen-index-title">C-Suite Financial Report Agent</span></a>
@@ -768,6 +768,7 @@ q('promoxBack').onclick=()=>{if(step>0){step--;render(false)}};q('promoxNext').o
     setOpen(String(event.data.id || "").replace(/^specimen-/, ""), true, true);
   });
   window.addEventListener("popstate", function () { setOpen(queryOpen(), false, false); });
+  window.addEventListener("hashchange", function () { setOpen(queryOpen(), false, true); });
   setLayout(new URLSearchParams(location.search).get("tabs"), false);
   setOpen(queryOpen(), false, false);
 })();
