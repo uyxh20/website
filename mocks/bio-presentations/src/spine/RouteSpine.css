@@ -1,0 +1,162 @@
+.route-board {
+  position: relative;
+  padding: 28px 0 8px;
+}
+
+.route-col-label {
+  position: absolute;
+  top: 0;
+  margin: 0;
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.route-col-label-w {
+  left: 0;
+}
+
+.route-col-label-e {
+  right: 0;
+}
+
+.route-list {
+  position: relative;
+  z-index: 1;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.route-group {
+  display: grid;
+  grid-template-columns: 1fr 52px 22px 1fr;
+  align-items: start;
+  min-height: 92px;
+}
+
+.route-group > time {
+  display: block;
+  padding-top: 4px;
+  text-align: right;
+  padding-right: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  font-variant-numeric: tabular-nums;
+}
+
+.route-side {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-bottom: 18px;
+}
+
+.route-west {
+  align-items: flex-end;
+  padding-right: 12px;
+}
+
+.route-east {
+  align-items: flex-start;
+  padding-left: 12px;
+}
+
+.route-station button {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  color: inherit;
+}
+
+.route-west button {
+  flex-direction: row-reverse;
+  text-align: right;
+}
+
+.route-dot {
+  width: 11px;
+  height: 11px;
+  margin-top: 4px;
+  border-radius: 50%;
+  background: var(--coral);
+  box-shadow: 0 0 0 3px #fff;
+  flex: 0 0 11px;
+}
+
+.route-station.is-open .route-dot {
+  box-shadow: 0 0 0 3px #fff, 0 0 0 5px #030303;
+}
+
+.route-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.route-name {
+  font-size: 16px;
+  font-weight: 500;
+}
+
+.route-years {
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.3;
+}
+
+.route-west .sv-note,
+.route-east .sv-note {
+  margin-top: 8px;
+  text-align: left;
+}
+
+.route-west .sv-note {
+  margin-left: auto;
+}
+
+@media (max-width: 640px) {
+  .route-group {
+    grid-template-columns: 40px 16px 1fr;
+    grid-template-areas:
+      'year rail west'
+      'year rail east';
+  }
+
+  .route-group > time {
+    grid-area: year;
+    text-align: left;
+    padding-right: 0;
+  }
+
+  .route-group .sv-rail {
+    grid-area: rail;
+  }
+
+  .route-west,
+  .route-east {
+    align-items: flex-start;
+    padding: 0 0 8px;
+  }
+
+  .route-west {
+    grid-area: west;
+  }
+
+  .route-east {
+    grid-area: east;
+  }
+
+  .route-west button {
+    flex-direction: row;
+    text-align: left;
+  }
+}
