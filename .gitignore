@@ -46,3 +46,4 @@ next-env.d.ts
 
 # verification evidence (keep the skill; do not commit screenshots)
 .cursor/skills/verify-ulysse-site/artifacts/
+.gstack/
